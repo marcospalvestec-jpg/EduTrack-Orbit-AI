@@ -1,32 +1,54 @@
 schema: spec-driven
 
-# Project context (optional)
-# This is shown to AI when creating artifacts.
-# Add your tech stack, conventions, style guides, domain knowledge, etc.
-# Example:
-#   context: |
-#     Tech stack: TypeScript, React, Node.js
-#     We use conventional commits
-#     Domain: e-commerce platform
+# Contexto Global do Projeto EduTrack Orbit AI
+context: |
+  Nome Oficial: EduTrack Orbit AI
+  Slogan: "Organize, acompanhe e evolua"
 
-# Per-artifact rules (optional)
-# Add custom rules for specific artifacts.
-# Example:
-#   rules:
-#     proposal:
-#       - Keep proposals under 500 words
-#       - Always include a "Non-goals" section
-#     tasks:
-#       - Break tasks into chunks of max 2 hours
+  Visão Geral:
+  Web app educacional responsivo para gerenciamento de disciplinas, tarefas e progresso acadêmico.
+  Público-alvo: Estudantes de cursos técnicos e superiores.
 
-# Per-operation guidance (optional)
-# Add advisory guidance for how apply and archive work should be conducted.
-# This is separate from artifact rules above.
-# Example:
-#   operations:
-#     apply:
-#       guidance:
-#         - Keep test summaries concise
-#     archive:
-#       guidance:
-#         - Summarize the archive outcome before finishing
+  Stack Tecnológica Obrigatória:
+  - Linguagem: Python 3.12+
+  - Frontend: Streamlit (UI interativa, responsiva e moderna)
+  - Backend & Banco de Dados: Xano & XanoScript (fonte oficial e única da verdade para dados e regras de negócio)
+  - Comunicação: APIs REST (JSON)
+  - Especificação e Governança: OpenSpec
+  - Controle de Versão: Git & GitHub
+  - Deploy Planejado: Streamlit Community Cloud
+  - Restrição Estrita: É proibido o uso de React, Next.js, FlutterFlow, Supabase ou outros frameworks/backends alternativos.
+
+  Arquitetura, Backend e Segurança:
+  - Backend Xano como fonte canônica e única de dados.
+  - Autenticação via JWT (JSON Web Token) gerado pelo Xano.
+  - Isolamento estrito de registros pelo usuário autenticado (`user_id`).
+  - Nomenclatura snake_case no backend para endpoints, tabelas e colunas.
+  - Tabelas Canônicas Principais: `users`, `subjects` e `academic_tasks`.
+  - Gestão segura de segredos via `st.secrets` (produção) e `.env` (desenvolvimento local).
+
+  Design, UI/UX e Acessibilidade:
+  - Abordagem Mobile-First, responsiva para smartphones, tablets e desktops.
+  - Suporte completo a temas Claro (Light) e Escuro (Dark).
+  - Identidade visual com cartões arredondados, paleta oficial (azul-petróleo, roxo, verde, laranja, vermelho) e feedback visual imediato.
+
+  Internacionalização (i18n):
+  - Preparado arquiteturalmente para múltiplos idiomas: pt-BR (padrão inicial), en-US, en-GB e es.
+
+  Qualidade, Engenharia e Desempenho:
+  - Código modular (views/components, services, api/client, models, utils).
+  - Uso obrigatório de Type Hints (`typing`), docstrings descritivas e tratamento robusto de erros e exceções.
+  - Testes automatizados com pytest validando regras de negócio e isolamento de dados.
+  - Meta de tempo de resposta das APIs inferior a 2 segundos.
+  - Capacidade para suportar no mínimo 1.000 usuários ativos.
+
+  Processo e Governança OpenSpec:
+  - Nenhuma linha de funcionalidade deve ser implementada sem uma proposta formal aprovada.
+  - Toda mudança funcional deve conter a estrutura canônica completa: `proposal.md`, `design.md`, `specs/` e `tasks.md` antes da implementação.
+  - Critérios de aceitação nas tarefas devem ser estritamente objetivos, mensuráveis e verificáveis.
+
+rules:
+  proposal:
+    - Incluir justificativa, impacto e não-escopo claramente delimitados.
+  tasks:
+    - Definir critérios de aceitação objetivos, mensuráveis e verificáveis com checkboxes.
