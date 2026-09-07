@@ -15,6 +15,8 @@ COLOR_OVERDUE_RED = "#EF4444"
 
 def inject_custom_css() -> None:
     """Inject custom CSS for EduTrack visual identity into Streamlit."""
+    dark_mode = st.sidebar.toggle("Modo escuro", key="edutrack_dark_mode")
+
     custom_css = """
     <style>
     /* Design Tokens */
@@ -213,3 +215,57 @@ def inject_custom_css() -> None:
     </style>
     """
     st.markdown(custom_css, unsafe_allow_html=True)
+
+    if dark_mode:
+        st.markdown(
+            """
+            <style>
+            .stApp,
+            [data-testid="stAppViewContainer"] {
+                background-color: #0B1720;
+                color: #E5EDF3;
+            }
+
+            [data-testid="stHeader"] {
+                background-color: rgba(11, 23, 32, 0.95);
+            }
+
+            [data-testid="stSidebar"] {
+                background-color: #102532;
+            }
+
+            [data-testid="stSidebar"] p,
+            [data-testid="stSidebar"] span,
+            [data-testid="stSidebar"] label,
+            [data-testid="stSidebar"] h1,
+            [data-testid="stSidebar"] h2,
+            [data-testid="stSidebar"] h3 {
+                color: #E5EDF3;
+            }
+
+            .stApp p,
+            .stApp label,
+            .stApp h1,
+            .stApp h2,
+            .stApp h3 {
+                color: #E5EDF3;
+            }
+
+            .edutrack-card,
+            [data-testid="stMetric"] {
+                background-color: #142B39;
+                border-color: #2C4C5E;
+            }
+
+            .edutrack-card-title,
+            .edutrack-card-subtitle {
+                color: #B8C7D1;
+            }
+
+            .edutrack-card-value {
+                color: #F3F7FA;
+            }
+            </style>
+            """,
+            unsafe_allow_html=True,
+        )
