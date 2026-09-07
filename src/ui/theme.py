@@ -158,6 +158,26 @@ def inject_custom_css() -> None:
         stroke: #FFFFFF !important;
     }
 
+    [data-testid="stExpandSidebarButton"],
+    [data-testid="stExpandSidebarButton"] button,
+    [data-testid="stExpandSidebarButton"] span,
+    [data-testid="stExpandSidebarButton"] i,
+    [data-testid="stExpandSidebarButton"] svg,
+    [data-testid="stExpandSidebarButton"] svg path {
+        color: #FFFFFF !important;
+        fill: #FFFFFF !important;
+        stroke: #FFFFFF !important;
+        opacity: 1 !important;
+        -webkit-text-fill-color: #FFFFFF !important;
+    }
+
+    [data-testid="stExpandSidebarButton"]:hover,
+    [data-testid="stExpandSidebarButton"]:focus,
+    [data-testid="stExpandSidebarButton"]:active {
+        background-color: #7C3AED !important;
+        color: #FFFFFF !important;
+    }
+
     /* Responsive Mobile Adjustments (<= 768px / 390px) */
     @media (max-width: 768px) {
         /* Allow columns to stack vertically on small screens */
