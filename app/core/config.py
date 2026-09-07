@@ -9,7 +9,6 @@ Gerencia o carregamento de variáveis de ambiente com resolução hierárquica:
 import os
 from dataclasses import dataclass
 from functools import lru_cache
-from typing import Optional
 
 try:
     from dotenv import load_dotenv

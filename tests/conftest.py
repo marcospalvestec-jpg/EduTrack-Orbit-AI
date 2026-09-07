@@ -2,6 +2,7 @@
 
 import sys
 from pathlib import Path
+
 import pytest
 
 # Adiciona a raiz do projeto ao sys.path para garantir imports nos testes

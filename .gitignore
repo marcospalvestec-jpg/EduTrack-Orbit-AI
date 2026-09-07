@@ -1,123 +1,21 @@
-# ==============================================================================
-# EduTrack Orbit AI - .gitignore
-# Stack: Python 3.12 + Streamlit + Xano + OpenSpec
-# ==============================================================================
-
-# --- Ambientes Virtuais ---
+# Python
 .venv/
-venv/
-env/
-ENV/
-env.bak/
-venv.bak/
-
-# --- Bytecode e Cache Python ---
 __pycache__/
 *.py[cod]
-*$py.class
-*.so
 .pytest_cache/
-.mypy_cache/
 .ruff_cache/
-.pyre/
-.pytype/
-.ipynb_checkpoints/
 
-# --- Testes e Cobertura ---
-.coverage
-.coverage.*
-htmlcov/
-.tox/
-.nox/
-nosetests.xml
-coverage.xml
-*.cover
-
-# --- Segredos e Variáveis de Ambiente ---
+# Secrets
 .env
 .env.*
-!.env.example
-
-# --- Streamlit (Segredos vs Configurações) ---
 .streamlit/secrets.toml
-!.streamlit/config.toml
 
-# --- Credenciais, Chaves, Tokens e Certificados ---
-*.key
-*.pem
-*.crt
-*.pfx
-*.p12
-credentials.json
-client_secret*.json
-token.json
-tokens.json
-
-# --- Configurações Locais e Credenciais Xano ---
-.xano/credentials.json
-xano_credentials.json
-xano_credentials*.json
-*xano_secret*
-
-# --- IDEs e Editores de Código ---
+# Editor and system
 .vscode/
 .idea/
-*.sublime-workspace
-*.sublime-project
-*.swp
-*.swo
-*~
-
-# --- Arquivos de Sistema Operacional ---
 .DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-ehthumbs.db
 Thumbs.db
-[Dd]esktop.ini
 
-# --- Logs e Diagnósticos ---
+# Reports and temporary files
 *.log
-logs/
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-
-# --- Builds, Pacotes e Distribuição ---
-build/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-*.egg-info/
-*.egg
-*.manifest
-*.spec
-
-# --- Arquivos Temporários ---
 tmp/
-temp/
-*.tmp
-*.bak
-*.swp
-
-# --- Relatórios Gerados em Tempo de Execução ---
-reports/generated/
-*.pdf.tmp
-
-# ==============================================================================
-# Exceções Explícitas e Arquivos Críticos Versionados
-# ==============================================================================
-!AGENTS.md
-!openspec/
-!openspec/**
-!xano/
-!*.xanoscript

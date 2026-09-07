@@ -1,1 +1,1 @@
-"""Pacote de testes automatizados do EduTrack Orbit AI."""
+"""Test suite package for EduTrack AI."""

@@ -1,21 +1,20 @@
-"""Testes automatizados da fundação técnica do EduTrack Orbit AI.
+"""Testes automatizados da fundaÃ§Ã£o tÃ©cnica do EduTrack Orbit AI.
 
 Valida:
-1. Integridade de importação de todos os subpacotes do app
-2. Resolução de configurações centrais
-3. Inicialização limpa do app.py via AppTest do Streamlit
+1. Integridade de importaÃ§Ã£o de todos os subpacotes do app
+2. ResoluÃ§Ã£o de configuraÃ§Ãµes centrais
+3. InicializaÃ§Ã£o limpa do app.py via AppTest do Streamlit
 """
 
 import importlib
 from pathlib import Path
 
-from streamlit.testing.v1 import AppTest
-
 from app.core.config import Settings, get_settings
+from streamlit.testing.v1 import AppTest
 
 
 def test_package_imports() -> None:
-    """Valida se todos os submódulos da arquitetura modular são importáveis."""
+    """Valida se todos os submÃ³dulos da arquitetura modular sÃ£o importÃ¡veis."""
     modules = [
         "app",
         "app.api",
@@ -31,11 +30,11 @@ def test_package_imports() -> None:
     ]
     for module_name in modules:
         mod = importlib.import_module(module_name)
-        assert mod is not None, f"Falha ao importar o módulo {module_name}"
+        assert mod is not None, f"Falha ao importar o mÃ³dulo {module_name}"
 
 
 def test_core_settings() -> None:
-    """Valida o carregamento e integridade do modelo de configurações."""
+    """Valida o carregamento e integridade do modelo de configuraÃ§Ãµes."""
     settings = get_settings()
     assert isinstance(settings, Settings)
     assert settings.app_name == "EduTrack Orbit AI"
@@ -45,13 +44,13 @@ def test_core_settings() -> None:
 
 
 def test_app_initialization_with_apptest() -> None:
-    """Valida que o entrypoint app.py inicializa sem exceções via AppTest."""
+    """Valida que o entrypoint app.py inicializa sem exceÃ§Ãµes via AppTest."""
     app_path = Path(__file__).resolve().parent.parent / "app.py"
     at = AppTest.from_file(str(app_path), default_timeout=10)
     at.run()
 
-    # Verifica que não ocorreram exceções na execução do script
-    assert not at.exception, f"Exceção detectada na inicialização do app.py: {at.exception}"
-    # Verifica que o título foi renderizado
-    assert len(at.title) > 0
-    assert "EduTrack Orbit AI" in at.title[0].value
+    # Verifica que nÃ£o ocorreram exceÃ§Ãµes na execuÃ§Ã£o do script
+    assert not at.exception, f"ExceÃ§Ã£o detectada na inicializaÃ§Ã£o do app.py: {at.exception}"
+    # Verifica que o tÃ­tulo foi renderizado
+    assert len(at.markdown) > 0
+    assert any("EduTrack Orbit AI" in item.value for item in at.markdown)

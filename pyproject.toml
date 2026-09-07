@@ -1,44 +1,38 @@
-[build-system]
-requires = ["setuptools>=61.0"]
-build-backend = "setuptools.build_meta"
-
 [project]
-name = "edutrack-orbit-ai"
+name = "edutrack-ai"
 version = "0.1.0"
-description = "EduTrack Orbit AI - Organize, acompanhe e evolua. Web app educacional para gerenciamento acadêmico."
+description = "EduTrack Orbit AI - Assistente Educacional Personalizado"
 readme = "README.md"
 requires-python = ">=3.12"
-authors = [
-    { name = "EduTrack Team" }
-]
 dependencies = [
-    "streamlit>=1.38.0",
-    "pydantic>=2.8.0",
-    "requests>=2.32.0",
-    "python-dotenv>=1.0.1",
+    "streamlit>=1.35.0",
+    "pandas>=2.2.0",
+    "reportlab>=4.1.0",
+    "plotly>=5.20.0",
 ]
 
 [project.optional-dependencies]
 dev = [
-    "pytest>=8.3.0",
-    "pytest-mock>=3.14.0",
-    "ruff>=0.6.0",
-    "mypy>=1.11.0",
+    "pytest>=8.0.0",
+    "ruff>=0.4.0",
 ]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+src = ["src", "pages", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "W", "N", "UP"]
+ignore = ["E501"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
 
 [tool.pytest.ini_options]
 minversion = "8.0"
 testpaths = ["tests"]
-pythonpath = ["."]
-addopts = "-v --strict-markers"
-
-[tool.ruff]
-line-length = 88
-target-version = "py312"
-
-[tool.mypy]
-python_version = "3.12"
-warn_return_any = true
-warn_unused_configs = true
-disallow_untyped_defs = true
-disallow_incomplete_defs = true
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
