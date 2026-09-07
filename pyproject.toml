@@ -1,0 +1,38 @@
+[project]
+name = "edutrack-ai"
+version = "0.1.0"
+description = "EduTrack Orbit AI - Assistente Educacional Personalizado"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "streamlit>=1.35.0",
+    "pandas>=2.2.0",
+    "reportlab>=4.1.0",
+    "plotly>=5.20.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0.0",
+    "ruff>=0.4.0",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+src = ["src", "pages", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "W", "N", "UP"]
+ignore = ["E501"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+
+[tool.pytest.ini_options]
+minversion = "8.0"
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
