@@ -140,6 +140,24 @@ def inject_custom_css() -> None:
         border-radius: 9999px;
     }
 
+    /* Sidebar mobile opener: always visible */
+    [data-testid="stExpandSidebarButton"] {
+        background: #7C3AED !important;
+        border: 2px solid #FFFFFF !important;
+        border-radius: 0 12px 12px 0 !important;
+        box-shadow: 0 4px 14px rgba(0, 0, 0, 0.28) !important;
+        z-index: 999999 !important;
+    }
+
+    [data-testid="stExpandSidebarButton"] button {
+        color: #FFFFFF !important;
+    }
+
+    [data-testid="stExpandSidebarButton"] svg {
+        fill: #FFFFFF !important;
+        stroke: #FFFFFF !important;
+    }
+
     /* Responsive Mobile Adjustments (<= 768px / 390px) */
     @media (max-width: 768px) {
         /* Allow columns to stack vertically on small screens */
@@ -265,6 +283,21 @@ def inject_custom_css() -> None:
             .edutrack-card-value {
                 color: #F3F7FA;
             }
+            [data-testid="stExpandSidebarButton"] {
+                background-color: #7C3AED !important;
+                border: 2px solid #FFFFFF !important;
+                border-radius: 10px !important;
+                box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35) !important;
+            }
+
+            [data-testid="stExpandSidebarButton"] button,
+            [data-testid="stExpandSidebarButton"] svg,
+            [data-testid="stExpandSidebarButton"] span {
+                color: #FFFFFF !important;
+                fill: #FFFFFF !important;
+                stroke: #FFFFFF !important;
+            }
+
             </style>
             """,
             unsafe_allow_html=True,
