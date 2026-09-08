@@ -46,8 +46,8 @@ def inject_custom_css() -> None:
         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     }
 
-    /* Hide Streamlit Cloud source/share toolbar in the presentation UI */
-    [data-testid="stToolbar"] {
+    /* Hide only the public repository link and preserve sidebar controls */
+    [data-testid="stToolbar"] a[href*="github.com"] {
         display: none !important;
     }
 
