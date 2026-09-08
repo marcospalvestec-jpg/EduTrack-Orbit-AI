@@ -38,6 +38,21 @@ def sign_out(state: MutableMapping[str, Any]) -> None:
     state[RECOVERY_EMAIL_KEY] = None
 
 
+def update_current_user_name(state: MutableMapping[str, Any], name: str) -> dict[str, str] | None:
+    """Update the visible name in both the session and local account record."""
+    user = current_user(state)
+    clean_name = name.strip()
+    if user is None or not clean_name:
+        return None
+    email = user["email"]
+    user["name"] = clean_name
+    state[AUTH_USER_KEY] = user
+    record = state[AUTH_USERS_KEY].get(email)
+    if isinstance(record, dict):
+        record["name"] = clean_name
+    return user
+
+
 def require_authenticated() -> dict[str, str]:
     """Stop a Streamlit page before protected data is rendered."""
     import streamlit as st

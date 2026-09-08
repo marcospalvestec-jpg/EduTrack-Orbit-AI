@@ -3,6 +3,7 @@
 import streamlit as st
 from src.core.auth_session import render_session_sidebar, require_authenticated
 from src.core.metrics import calculate_dashboard_metrics
+from src.services.demo_auth import DEMO_EMAIL
 from src.services.simulated_data import SimulatedDataService
 from src.ui.charts import render_status_pie_chart, render_subject_workload_chart
 from src.ui.components import render_header, render_metric_card, render_status_chip
@@ -15,7 +16,7 @@ user = require_authenticated()
 render_session_sidebar(user)
 
 # Data Service Layer
-service = SimulatedDataService()
+service = SimulatedDataService(user_id=user["email"], seed_demo=user["email"] == DEMO_EMAIL)
 subjects = service.get_subjects()
 tasks = service.get_tasks()
 
@@ -26,6 +27,15 @@ render_header(
     description="Acompanhe suas métricas de estudo, distribuição de tarefas e entregas prioritárias.",
     icon="📊",
 )
+
+if not subjects:
+    st.info("Seu dashboard será preenchido conforme você cadastrar disciplinas e tarefas.")
+    action_subject, action_demo = st.columns(2)
+    if action_subject.button("Cadastrar disciplina", type="primary", width="stretch"):
+        st.switch_page("pages/2_Disciplinas.py")
+    if action_demo.button("Carregar dados demonstrativos", width="stretch"):
+        service.reset_to_defaults()
+        st.rerun()
 
 # Top KPI Metric Cards
 c1, c2, c3, c4, c5 = st.columns(5)

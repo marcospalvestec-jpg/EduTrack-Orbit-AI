@@ -6,6 +6,7 @@ import streamlit as st
 from src.core.auth_session import render_session_sidebar, require_authenticated
 from src.core.filters import filter_tasks_dataframe, tasks_to_dataframe
 from src.models.task import Task, TaskPriority, TaskStatus
+from src.services.demo_auth import DEMO_EMAIL
 from src.services.simulated_data import SimulatedDataService
 from src.ui.components import render_header, render_status_chip
 from src.ui.theme import inject_custom_css
@@ -16,7 +17,7 @@ inject_custom_css()
 user = require_authenticated()
 render_session_sidebar(user)
 
-service = SimulatedDataService()
+service = SimulatedDataService(user_id=user["email"], seed_demo=user["email"] == DEMO_EMAIL)
 subjects = service.get_subjects()
 tasks = service.get_tasks()
 
@@ -106,7 +107,16 @@ st.markdown(f"**Tarefas Encontradas:** `{len(df_filtered)}` de `{len(tasks)}` to
 st.divider()
 
 # Render Task List Container Cards
-if df_filtered.empty:
+if not tasks:
+    if subjects:
+        st.info(
+            "Nenhuma tarefa cadastrada. Use o formulário no menu lateral para criar a primeira."
+        )
+    else:
+        st.info("Cadastre uma disciplina antes de adicionar tarefas.")
+        if st.button("Ir para Disciplinas", type="primary"):
+            st.switch_page("pages/2_Disciplinas.py")
+elif df_filtered.empty:
     st.info("Nenhuma tarefa corresponde aos filtros selecionados.")
 else:
     for idx, row in df_filtered.iterrows():
@@ -144,5 +154,77 @@ else:
 
             with c5:
                 st.markdown(render_status_chip(row["status"]), unsafe_allow_html=True)
+
+            with st.expander("Editar ou excluir"):
+                edit_tab, delete_tab = st.tabs(["Editar", "Excluir"])
+                task = service.get_task_by_id(t_id)
+                if task is None:
+                    st.error("Tarefa não encontrada.")
+                    continue
+
+                with edit_tab:
+                    subject_names = [subject.name for subject in subjects]
+                    current_subject_index = (
+                        subject_names.index(task.subject_name)
+                        if task.subject_name in subject_names
+                        else 0
+                    )
+                    with st.form(f"edit_task_{t_id}"):
+                        edit_title = st.text_input("Título", value=task.title)
+                        edit_subject_name = st.selectbox(
+                            "Disciplina", subject_names, index=current_subject_index
+                        )
+                        edit_due = st.date_input("Prazo", value=task.due_date)
+                        status_values = [status.value for status in TaskStatus]
+                        priority_values = [priority.value for priority in TaskPriority]
+                        edit_status = st.selectbox(
+                            "Status",
+                            status_values,
+                            index=status_values.index(task.status.value),
+                        )
+                        edit_priority = st.selectbox(
+                            "Prioridade",
+                            priority_values,
+                            index=priority_values.index(task.priority.value),
+                        )
+                        edit_description = st.text_area("Descrição", value=task.description)
+                        save_task = st.form_submit_button(
+                            "Salvar alterações", type="primary", width="stretch"
+                        )
+                    if save_task:
+                        if not edit_title.strip():
+                            st.error("O título é obrigatório.")
+                        else:
+                            selected_subject = next(
+                                subject for subject in subjects if subject.name == edit_subject_name
+                            )
+                            service.update_task(
+                                t_id,
+                                title=edit_title.strip(),
+                                subject_id=selected_subject.id,
+                                subject_name=selected_subject.name,
+                                due_date=edit_due,
+                                status=TaskStatus(edit_status),
+                                priority=TaskPriority(edit_priority),
+                                description=edit_description.strip(),
+                            )
+                            st.success("Tarefa atualizada.")
+                            st.rerun()
+
+                with delete_tab:
+                    st.warning("Esta ação não pode ser desfeita.")
+                    confirm_delete = st.checkbox(
+                        "Confirmo a exclusão desta tarefa",
+                        key=f"confirm_task_{t_id}",
+                    )
+                    if st.button(
+                        "Excluir tarefa",
+                        key=f"delete_task_{t_id}",
+                        disabled=not confirm_delete,
+                        width="stretch",
+                    ):
+                        service.delete_task(t_id)
+                        st.success("Tarefa excluída.")
+                        st.rerun()
 
             st.divider()
