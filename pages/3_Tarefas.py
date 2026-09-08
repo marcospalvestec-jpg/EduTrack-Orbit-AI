@@ -6,8 +6,7 @@ import streamlit as st
 from src.core.auth_session import render_session_sidebar, require_authenticated
 from src.core.filters import filter_tasks_dataframe, tasks_to_dataframe
 from src.models.task import Task, TaskPriority, TaskStatus
-from src.services.demo_auth import DEMO_EMAIL
-from src.services.simulated_data import SimulatedDataService
+from src.services.data_service import data_service_for_user, load_academic_data
 from src.ui.components import render_header, render_status_chip
 from src.ui.theme import inject_custom_css
 
@@ -17,9 +16,8 @@ inject_custom_css()
 user = require_authenticated()
 render_session_sidebar(user)
 
-service = SimulatedDataService(user_id=user["email"], seed_demo=user["email"] == DEMO_EMAIL)
-subjects = service.get_subjects()
-tasks = service.get_tasks()
+service = data_service_for_user(user)
+subjects, tasks = load_academic_data(service)
 
 render_header(
     title="Gerenciamento de Tarefas",

@@ -3,8 +3,7 @@
 import streamlit as st
 from src.core.auth_session import render_session_sidebar, require_authenticated
 from src.core.metrics import calculate_dashboard_metrics
-from src.services.demo_auth import DEMO_EMAIL
-from src.services.simulated_data import SimulatedDataService
+from src.services.data_service import data_service_for_user, load_academic_data
 from src.ui.charts import render_status_pie_chart, render_subject_workload_chart
 from src.ui.components import render_header, render_metric_card, render_status_chip
 from src.ui.theme import inject_custom_css
@@ -16,9 +15,8 @@ user = require_authenticated()
 render_session_sidebar(user)
 
 # Data Service Layer
-service = SimulatedDataService(user_id=user["email"], seed_demo=user["email"] == DEMO_EMAIL)
-subjects = service.get_subjects()
-tasks = service.get_tasks()
+service = data_service_for_user(user)
+subjects, tasks = load_academic_data(service)
 
 metrics = calculate_dashboard_metrics(tasks, subjects)
 
@@ -33,9 +31,10 @@ if not subjects:
     action_subject, action_demo = st.columns(2)
     if action_subject.button("Cadastrar disciplina", type="primary", width="stretch"):
         st.switch_page("pages/2_Disciplinas.py")
-    if action_demo.button("Carregar dados demonstrativos", width="stretch"):
-        service.reset_to_defaults()
-        st.rerun()
+    if not getattr(service, "is_remote", False):
+        if action_demo.button("Carregar dados demonstrativos", width="stretch"):
+            service.reset_to_defaults()
+            st.rerun()
 
 # Top KPI Metric Cards
 c1, c2, c3, c4, c5 = st.columns(5)

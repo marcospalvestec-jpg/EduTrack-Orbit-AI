@@ -6,8 +6,8 @@ import streamlit as st
 from src.core.auth_session import render_session_sidebar, require_authenticated
 from src.core.metrics import calculate_subject_progress
 from src.models.subject import Subject
-from src.services.demo_auth import DEMO_EMAIL
-from src.services.simulated_data import SimulatedDataService
+from src.services.data_service import data_service_for_user, load_academic_data
+from src.services.xano import XanoError
 from src.ui.components import render_header
 from src.ui.theme import inject_custom_css
 
@@ -17,9 +17,8 @@ inject_custom_css()
 user = require_authenticated()
 render_session_sidebar(user)
 
-service = SimulatedDataService(user_id=user["email"], seed_demo=user["email"] == DEMO_EMAIL)
-subjects = service.get_subjects()
-tasks = service.get_tasks()
+service = data_service_for_user(user)
+subjects, tasks = load_academic_data(service)
 
 render_header(
     title="Gerenciamento de Disciplinas",
@@ -47,9 +46,13 @@ with st.sidebar:
                     workload_hours=int(new_workload),
                     color_hex=new_color,
                 )
-                service.add_subject(sub)
-                st.success(f"Disciplina '{new_name}' adicionada com sucesso!")
-                st.rerun()
+                try:
+                    service.add_subject(sub)
+                except XanoError as error:
+                    st.error(f"Não foi possível cadastrar: {error}")
+                else:
+                    st.success(f"Disciplina '{new_name}' adicionada com sucesso!")
+                    st.rerun()
             else:
                 st.error("Preencha o Nome e o Código da disciplina.")
 
@@ -111,16 +114,20 @@ else:
                         )
                     if save_subject:
                         if edit_name.strip() and edit_code.strip():
-                            service.update_subject(
-                                subj.id,
-                                name=edit_name.strip(),
-                                code=edit_code.strip(),
-                                professor=edit_professor.strip() or "Não informado",
-                                workload_hours=int(edit_workload),
-                                color_hex=edit_color,
-                            )
-                            st.success("Disciplina atualizada.")
-                            st.rerun()
+                            try:
+                                service.update_subject(
+                                    subj.id,
+                                    name=edit_name.strip(),
+                                    code=edit_code.strip(),
+                                    professor=edit_professor.strip() or "Não informado",
+                                    workload_hours=int(edit_workload),
+                                    color_hex=edit_color,
+                                )
+                            except XanoError as error:
+                                st.error(f"Não foi possível atualizar: {error}")
+                            else:
+                                st.success("Disciplina atualizada.")
+                                st.rerun()
                         else:
                             st.error("Nome e código são obrigatórios.")
 
@@ -137,7 +144,11 @@ else:
                         disabled=not confirm_delete,
                         width="stretch",
                     ):
-                        service.delete_subject(subj.id)
-                        st.success("Disciplina excluída.")
-                        st.rerun()
+                        try:
+                            service.delete_subject(subj.id)
+                        except XanoError as error:
+                            st.error(f"Não foi possível excluir: {error}")
+                        else:
+                            st.success("Disciplina excluída.")
+                            st.rerun()
                 st.divider()
