@@ -83,3 +83,20 @@ def test_profile_shows_account_without_exposing_password():
     assert not app.exception
     assert any("estudante@example.com" in metric.value for metric in app.metric)
     assert not any("password_hash" in markdown.value for markdown in app.markdown)
+
+
+def test_xano_session_is_not_labeled_as_demonstration():
+    """A user with a Xano token must be identified as a real account."""
+    app = AppTest.from_file(PROJECT_ROOT / "pages/4_Perfil.py", default_timeout=15)
+    app.session_state["auth_current_user"] = {
+        "name": "Marcos Alves",
+        "email": "marcos@example.com",
+    }
+    app.session_state["auth_token"] = "private-xano-token"
+    app.session_state["auth_demo_users"] = {}
+    app.session_state["auth_recovery_email"] = None
+    app.run()
+
+    assert not app.exception
+    assert any("Sua conta" in markdown.value for markdown in app.markdown)
+    assert not any("Sessão demonstrativa" in markdown.value for markdown in app.markdown)

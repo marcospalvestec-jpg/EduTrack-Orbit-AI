@@ -1,5 +1,6 @@
 """Disciplinas management page view."""
 
+from datetime import date, timedelta
 from html import escape
 
 import streamlit as st
@@ -34,17 +35,23 @@ with st.sidebar:
         new_code = st.text_input("Código", placeholder="Ex: FIS102")
         new_prof = st.text_input("Professor(a)", placeholder="Ex: Prof. Roberto")
         new_workload = st.number_input("Carga Horária (h)", min_value=10, max_value=200, value=60)
+        new_description = st.text_area("Descrição", placeholder="Resumo da disciplina")
+        new_start = st.date_input("Data de início", value=date.today())
+        new_end = st.date_input("Data de término", value=date.today() + timedelta(days=120))
         new_color = st.color_picker("Cor da Disciplina", value="#1A3644")
 
         submitted = st.form_submit_button("Cadastrar Disciplina", width="stretch")
         if submitted:
-            if new_name and new_code:
+            if new_name and new_code and new_end >= new_start:
                 sub = Subject(
                     name=new_name,
                     code=new_code,
                     professor=new_prof or "Não informado",
                     workload_hours=int(new_workload),
                     color_hex=new_color,
+                    description=new_description.strip(),
+                    start_date=new_start,
+                    end_date=new_end,
                 )
                 try:
                     service.add_subject(sub)
@@ -53,6 +60,8 @@ with st.sidebar:
                 else:
                     st.success(f"Disciplina '{new_name}' adicionada com sucesso!")
                     st.rerun()
+            elif new_end < new_start:
+                st.error("A data de término deve ser igual ou posterior à data de início.")
             else:
                 st.error("Preencha o Nome e o Código da disciplina.")
 
@@ -96,6 +105,12 @@ else:
                     st.write(f"Código: **{subj.code}**")
                     st.write(f"Professor(a): **{subj.professor}**")
                     st.write(f"Carga horária: **{subj.workload_hours} horas**")
+                    st.write(
+                        f"Período: **{subj.start_date.strftime('%d/%m/%Y')} a "
+                        f"{subj.end_date.strftime('%d/%m/%Y')}**"
+                    )
+                    if subj.description:
+                        st.write(subj.description)
 
                 with edit_tab:
                     with st.form(f"edit_subject_{subj.id}"):
@@ -108,12 +123,15 @@ else:
                             max_value=200,
                             value=subj.workload_hours,
                         )
+                        edit_description = st.text_area("Descrição", value=subj.description)
+                        edit_start = st.date_input("Data de início", value=subj.start_date)
+                        edit_end = st.date_input("Data de término", value=subj.end_date)
                         edit_color = st.color_picker("Cor", value=subj.color_hex)
                         save_subject = st.form_submit_button(
                             "Salvar alterações", type="primary", width="stretch"
                         )
                     if save_subject:
-                        if edit_name.strip() and edit_code.strip():
+                        if edit_name.strip() and edit_code.strip() and edit_end >= edit_start:
                             try:
                                 service.update_subject(
                                     subj.id,
@@ -121,6 +139,9 @@ else:
                                     code=edit_code.strip(),
                                     professor=edit_professor.strip() or "Não informado",
                                     workload_hours=int(edit_workload),
+                                    description=edit_description.strip(),
+                                    start_date=edit_start,
+                                    end_date=edit_end,
                                     color_hex=edit_color,
                                 )
                             except XanoError as error:
@@ -128,6 +149,10 @@ else:
                             else:
                                 st.success("Disciplina atualizada.")
                                 st.rerun()
+                        elif edit_end < edit_start:
+                            st.error(
+                                "A data de término deve ser igual ou posterior à data de início."
+                            )
                         else:
                             st.error("Nome e código são obrigatórios.")
 
