@@ -66,10 +66,25 @@ def require_authenticated() -> dict[str, str]:
 
 
 def render_session_sidebar(user: dict[str, str]) -> None:
-    """Render current-user context and a reusable logout action."""
+    """Render app navigation, current-user context and logout action."""
     import streamlit as st
+    from streamlit.errors import StreamlitPageNotFoundError
+
+    def page_link(path: str, label: str, icon: str) -> None:
+        """Render a link while allowing pages to run independently in tests."""
+        try:
+            st.page_link(path, label=label, icon=icon)
+        except StreamlitPageNotFoundError:
+            st.markdown(f"{icon} {label}")
 
     with st.sidebar:
+        st.markdown("### Navegação")
+        page_link("app.py", label="Início", icon="🏠")
+        page_link("pages/1_Dashboard.py", label="Dashboard", icon="📊")
+        page_link("pages/2_Disciplinas.py", label="Disciplinas", icon="📚")
+        page_link("pages/3_Tarefas.py", label="Tarefas", icon="✅")
+        page_link("pages/4_Perfil.py", label="Meu perfil", icon="👤")
+        st.divider()
         st.markdown("### 👤 Sessão demonstrativa")
         st.markdown(f"**{user['name']}**")
         st.caption(user["email"])

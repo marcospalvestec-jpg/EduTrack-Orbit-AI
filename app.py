@@ -43,9 +43,6 @@ with st.sidebar:
     st.caption("Organize, acompanhe e evolua")
     st.divider()
 
-    st.page_link("pages/4_Perfil.py", label="Meu perfil", icon="👤")
-    st.divider()
-
     if st.button("Carregar dados demonstrativos", width="stretch"):
         service.reset_to_defaults()
         st.success("Dados demonstrativos carregados.")
