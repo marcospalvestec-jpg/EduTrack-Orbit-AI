@@ -7,6 +7,7 @@ from typing import Any
 
 AUTH_USERS_KEY = "auth_demo_users"
 AUTH_USER_KEY = "auth_current_user"
+AUTH_TOKEN_KEY = "auth_token"
 RECOVERY_EMAIL_KEY = "auth_recovery_email"
 
 
@@ -14,6 +15,7 @@ def initialize_auth_state(state: MutableMapping[str, Any]) -> None:
     """Initialize all authentication keys without overwriting active state."""
     state.setdefault(AUTH_USERS_KEY, {})
     state.setdefault(AUTH_USER_KEY, None)
+    state.setdefault(AUTH_TOKEN_KEY, None)
     state.setdefault(RECOVERY_EMAIL_KEY, None)
 
 
@@ -24,10 +26,13 @@ def current_user(state: MutableMapping[str, Any]) -> dict[str, str] | None:
     return user if isinstance(user, dict) else None
 
 
-def sign_in(state: MutableMapping[str, Any], user: dict[str, str]) -> None:
+def sign_in(
+    state: MutableMapping[str, Any], user: dict[str, Any], token: str | None = None
+) -> None:
     """Store a public authenticated user in session state."""
     initialize_auth_state(state)
     state[AUTH_USER_KEY] = dict(user)
+    state[AUTH_TOKEN_KEY] = token
     state[RECOVERY_EMAIL_KEY] = None
 
 
@@ -35,6 +40,7 @@ def sign_out(state: MutableMapping[str, Any]) -> None:
     """Clear authentication and recovery state while preserving local accounts."""
     initialize_auth_state(state)
     state[AUTH_USER_KEY] = None
+    state[AUTH_TOKEN_KEY] = None
     state[RECOVERY_EMAIL_KEY] = None
 
 
