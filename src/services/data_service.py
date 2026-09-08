@@ -53,6 +53,9 @@ class XanoSubjectDataService:
                 "code": subject.code,
                 "professor": subject.professor,
                 "workload_hours": subject.workload_hours,
+                "description": subject.description,
+                "start_date": subject.start_date.isoformat(),
+                "end_date": subject.end_date.isoformat(),
                 "color_hex": subject.color_hex,
             },
         )
@@ -62,8 +65,20 @@ class XanoSubjectDataService:
 
     def update_subject(self, subject_id: str, **changes: object) -> Subject | None:
         """Update a subject in Xano and synchronize local task labels."""
-        allowed = {"name", "code", "professor", "workload_hours", "color_hex"}
+        allowed = {
+            "name",
+            "code",
+            "professor",
+            "workload_hours",
+            "description",
+            "start_date",
+            "end_date",
+            "color_hex",
+        }
         payload = {key: value for key, value in changes.items() if key in allowed}
+        for field_name in ("start_date", "end_date"):
+            if hasattr(payload.get(field_name), "isoformat"):
+                payload[field_name] = payload[field_name].isoformat()
         response = self.client.request(
             "PATCH", f"subjects/{subject_id}", token=self.token, payload=payload
         )

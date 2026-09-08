@@ -1,5 +1,7 @@
 """Tests for the staged Xano academic-data integration."""
 
+from datetime import date
+
 from src.models.subject import Subject
 from src.services.data_service import XanoSubjectDataService
 
@@ -50,7 +52,18 @@ def test_xano_subject_create_sends_authenticated_payload(monkeypatch):
         return {"id": 8, **payload}
 
     monkeypatch.setattr(service.client, "request", fake_request)
-    created = service.add_subject(Subject("Algoritmos", "AED", "Prof. Ana", 60, "#123456"))
+    created = service.add_subject(
+        Subject(
+            "Algoritmos",
+            "AED",
+            "Prof. Ana",
+            60,
+            "#123456",
+            "Estruturas de dados",
+            date(2026, 8, 3),
+            date(2026, 12, 18),
+        )
+    )
 
     assert created.id == 8
     assert captured == {
@@ -61,6 +74,9 @@ def test_xano_subject_create_sends_authenticated_payload(monkeypatch):
             "code": "AED",
             "professor": "Prof. Ana",
             "workload_hours": 60,
+            "description": "Estruturas de dados",
+            "start_date": "2026-08-03",
+            "end_date": "2026-12-18",
             "color_hex": "#123456",
         },
         "token": "private-token",

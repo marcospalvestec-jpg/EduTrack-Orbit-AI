@@ -18,7 +18,7 @@ render_session_sidebar(user)
 
 render_header(
     title="Meu Perfil",
-    description="Consulte seus dados e mantenha sua conta demonstrativa atualizada.",
+    description="Consulte seus dados e mantenha sua conta atualizada.",
     icon="👤",
 )
 

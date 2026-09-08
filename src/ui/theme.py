@@ -46,6 +46,11 @@ def inject_custom_css() -> None:
         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     }
 
+    /* Hide Streamlit Cloud source/share toolbar in the presentation UI */
+    [data-testid="stToolbar"] {
+        display: none !important;
+    }
+
     /* Custom Metric Cards */
     .edutrack-card {
         background-color: var(--background-secondary, #FFFFFF);
@@ -303,6 +308,15 @@ def inject_custom_css() -> None:
             [data-testid="stSidebar"] h2,
             [data-testid="stSidebar"] h3 {
                 color: #E5EDF3;
+            }
+
+            [data-testid="stSidebar"] a,
+            [data-testid="stSidebar"] a:visited,
+            .stApp a[href^="mailto:"],
+            .stApp a[href^="mailto:"]:visited {
+                color: #F8FAFC !important;
+                -webkit-text-fill-color: #F8FAFC !important;
+                opacity: 1 !important;
             }
 
             .stApp p,

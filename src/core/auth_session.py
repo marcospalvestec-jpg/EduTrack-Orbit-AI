@@ -91,7 +91,10 @@ def render_session_sidebar(user: dict[str, str]) -> None:
         page_link("pages/3_Tarefas.py", label="Tarefas", icon="✅")
         page_link("pages/4_Perfil.py", label="Meu perfil", icon="👤")
         st.divider()
-        st.markdown("### 👤 Sessão demonstrativa")
+        account_label = (
+            "Sua conta" if st.session_state.get(AUTH_TOKEN_KEY) else "Sessão demonstrativa"
+        )
+        st.markdown(f"### 👤 {account_label}")
         st.markdown(f"**{user['name']}**")
         st.caption(user["email"])
         if st.button("Sair", width="stretch", key="auth_logout"):
