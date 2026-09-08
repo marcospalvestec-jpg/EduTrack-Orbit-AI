@@ -336,6 +336,57 @@ def inject_custom_css() -> None:
                 color: #F3F7FA !important;
                 border-color: #456274 !important;
             }
+
+            .stButton > button,
+            .stDownloadButton > button,
+            [data-testid="stFormSubmitButton"] > button,
+            [data-testid="stSidebar"] .stButton > button {
+                background-color: #7C3AED !important;
+                color: #F8FAFC !important;
+                border: 1px solid #A78BFA !important;
+                opacity: 1 !important;
+            }
+
+            .stButton > button p,
+            .stDownloadButton > button p,
+            [data-testid="stFormSubmitButton"] > button p,
+            [data-testid="stSidebar"] .stButton > button p {
+                color: #F8FAFC !important;
+                opacity: 1 !important;
+            }
+
+            .stButton > button:hover,
+            .stDownloadButton > button:hover,
+            [data-testid="stFormSubmitButton"] > button:hover,
+            [data-testid="stSidebar"] .stButton > button:hover {
+                background-color: #8B5CF6 !important;
+                color: #FFFFFF !important;
+                border-color: #C4B5FD !important;
+            }
+
+            .stButton > button:focus-visible,
+            .stDownloadButton > button:focus-visible,
+            [data-testid="stFormSubmitButton"] > button:focus-visible {
+                outline: 3px solid #A78BFA !important;
+                outline-offset: 2px !important;
+            }
+
+            .stButton > button:disabled,
+            .stDownloadButton > button:disabled,
+            [data-testid="stFormSubmitButton"] > button:disabled {
+                background-color: #4C3A70 !important;
+                color: #DDD6FE !important;
+                border-color: #6D5A91 !important;
+                opacity: 1 !important;
+                cursor: not-allowed !important;
+            }
+
+            .stButton > button:disabled p,
+            .stDownloadButton > button:disabled p,
+            [data-testid="stFormSubmitButton"] > button:disabled p {
+                color: #DDD6FE !important;
+                opacity: 1 !important;
+            }
             [data-testid="stExpandSidebarButton"] {
                 background-color: #7C3AED !important;
                 border: 2px solid #FFFFFF !important;
