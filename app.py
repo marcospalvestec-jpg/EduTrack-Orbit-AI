@@ -2,6 +2,7 @@
 
 import streamlit as st
 from src.core.auth_session import current_user, initialize_auth_state, render_session_sidebar
+from src.services.demo_auth import DEMO_EMAIL
 from src.services.simulated_data import SimulatedDataService
 from src.ui.auth import render_auth_portal
 from src.ui.components import render_header
@@ -30,7 +31,10 @@ if user is None:
     st.stop()
 
 # Initialize Simulated Data Service (persisted in st.session_state)
-service = SimulatedDataService()
+service = SimulatedDataService(
+    user_id=user["email"],
+    seed_demo=user["email"] == DEMO_EMAIL,
+)
 render_session_sidebar(user)
 
 # Sidebar Navigation Header & User Info
@@ -39,20 +43,27 @@ with st.sidebar:
     st.caption("Organize, acompanhe e evolua")
     st.divider()
 
-    st.markdown("### Perfil do Estudante")
-    st.markdown(f"**Aluno:** {user['name']}")
-    st.markdown("**Curso:** Ciência da Computação")
-    st.markdown("**Semestre:** 2026.2")
+    st.page_link("pages/4_Perfil.py", label="Meu perfil", icon="👤")
     st.divider()
 
-    st.markdown("### 💡 Dica da Semana")
-    st.info("Mantenha suas tarefas de Cálculo I em dia para garantir bom desempenho no simulado!")
-    st.divider()
-
-    if st.button("🔄 Restaurar Dados Demonstrativos", width="stretch"):
+    if st.button("Carregar dados demonstrativos", width="stretch"):
         service.reset_to_defaults()
-        st.success("Dados restaurados!")
+        st.success("Dados demonstrativos carregados.")
         st.rerun()
+
+    if subjects := service.get_subjects():
+        if st.button("Limpar meus dados", width="stretch"):
+            st.session_state["confirm_clear_data"] = True
+        if st.session_state.get("confirm_clear_data"):
+            st.warning(f"Isso excluirá {len(subjects)} disciplina(s) e todas as tarefas.")
+            confirm, cancel = st.columns(2)
+            if confirm.button("Confirmar", type="primary", width="stretch"):
+                service.clear_all()
+                st.session_state["confirm_clear_data"] = False
+                st.rerun()
+            if cancel.button("Cancelar", width="stretch"):
+                st.session_state["confirm_clear_data"] = False
+                st.rerun()
 
 # Main Entry Landing / Dashboard Overview
 subjects = service.get_subjects()
@@ -64,18 +75,42 @@ render_header(
     icon="🚀",
 )
 
-col1, col2 = st.columns([2, 1])
+if not subjects:
+    st.info(
+        "Sua conta está pronta. Cadastre a primeira disciplina ou carregue dados demonstrativos pelo menu lateral."
+    )
+    action_subject, action_demo = st.columns(2)
+    with action_subject:
+        if st.button("Cadastrar primeira disciplina", type="primary", width="stretch"):
+            st.switch_page("pages/2_Disciplinas.py")
+    with action_demo:
+        if st.button("Explorar com dados de exemplo", width="stretch"):
+            service.reset_to_defaults()
+            st.rerun()
+
+col1, col2 = st.columns([3, 2])
 
 with col1:
-    st.markdown("### 📌 Guia Rápido de Navegação")
-    st.markdown(
-        """
-        Utilize o menu lateral para navegar entre as seções:
-        - **1. Dashboard**: Visão geral de métricas, gráficos de progresso e tarefas urgentes.
-        - **2. Disciplinas**: Gerencie suas matérias, professores e carga horária.
-        - **3. Tarefas**: Organize e filtre pendências por matéria, status e data de entrega.
-        """
-    )
+    st.markdown(f"### Olá, {user['name'].split()[0]} 👋")
+    if tasks:
+        pending = [task for task in tasks if task.status.value != "Concluída"]
+        pending.sort(key=lambda task: task.due_date)
+        if pending:
+            next_task = pending[0]
+            st.markdown(f"**Próxima entrega:** {next_task.title}")
+            st.caption(f"{next_task.subject_name} · {next_task.due_date.strftime('%d/%m/%Y')}")
+        else:
+            st.success("Todas as tarefas cadastradas estão concluídas.")
+    else:
+        st.caption("Adicione tarefas para visualizar aqui suas próximas entregas.")
+
+    quick_subject, quick_task, quick_dashboard = st.columns(3)
+    if quick_subject.button("Nova disciplina", width="stretch"):
+        st.switch_page("pages/2_Disciplinas.py")
+    if quick_task.button("Nova tarefa", width="stretch", disabled=not subjects):
+        st.switch_page("pages/3_Tarefas.py")
+    if quick_dashboard.button("Ver dashboard", width="stretch"):
+        st.switch_page("pages/1_Dashboard.py")
 
 with col2:
     st.markdown("### 📊 Status Rápido")

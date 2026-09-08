@@ -142,9 +142,19 @@ def _get_initial_tasks(reference_date: date | None = None) -> list[Task]:
 class SimulatedDataService:
     """Service providing in-memory and st.session_state simulated data."""
 
-    def __init__(self, use_session_state: bool = True, reference_date: date | None = None):
+    def __init__(
+        self,
+        use_session_state: bool = True,
+        reference_date: date | None = None,
+        user_id: str = "anonymous",
+        seed_demo: bool = True,
+    ):
         self.use_session_state = use_session_state
         self.reference_date = reference_date or date.today()
+        self.user_id = user_id.strip().lower()
+        self.seed_demo = seed_demo
+        self._subjects_key = f"subjects:{self.user_id}"
+        self._tasks_key = f"tasks:{self.user_id}"
         self._subjects: list[Subject] = []
         self._tasks: list[Task] = []
         self._initialize_data()
@@ -158,18 +168,18 @@ class SimulatedDataService:
         if self.use_session_state and in_streamlit:
             import streamlit as st
 
-            if "subjects" not in st.session_state:
-                st.session_state["subjects"] = [s.to_dict() for s in _get_initial_subjects()]
-            if "tasks" not in st.session_state:
-                st.session_state["tasks"] = [
-                    t.to_dict() for t in _get_initial_tasks(self.reference_date)
-                ]
+            if self._subjects_key not in st.session_state:
+                initial_subjects = _get_initial_subjects() if self.seed_demo else []
+                st.session_state[self._subjects_key] = [s.to_dict() for s in initial_subjects]
+            if self._tasks_key not in st.session_state:
+                initial_tasks = _get_initial_tasks(self.reference_date) if self.seed_demo else []
+                st.session_state[self._tasks_key] = [t.to_dict() for t in initial_tasks]
 
-            self._subjects = [Subject.from_dict(s) for s in st.session_state["subjects"]]
-            self._tasks = [Task.from_dict(t) for t in st.session_state["tasks"]]
+            self._subjects = [Subject.from_dict(s) for s in st.session_state[self._subjects_key]]
+            self._tasks = [Task.from_dict(t) for t in st.session_state[self._tasks_key]]
         else:
-            self._subjects = _get_initial_subjects()
-            self._tasks = _get_initial_tasks(self.reference_date)
+            self._subjects = _get_initial_subjects() if self.seed_demo else []
+            self._tasks = _get_initial_tasks(self.reference_date) if self.seed_demo else []
 
         self._update_computed_statuses()
 
@@ -180,8 +190,8 @@ class SimulatedDataService:
         if self.use_session_state and "streamlit" in sys.modules:
             import streamlit as st
 
-            st.session_state["subjects"] = [s.to_dict() for s in self._subjects]
-            st.session_state["tasks"] = [t.to_dict() for t in self._tasks]
+            st.session_state[self._subjects_key] = [s.to_dict() for s in self._subjects]
+            st.session_state[self._tasks_key] = [t.to_dict() for t in self._tasks]
 
     def _update_computed_statuses(self) -> None:
         """Compute status changes (e.g. overdue tasks)."""
@@ -207,6 +217,32 @@ class SimulatedDataService:
         self._sync_to_session_state()
         return subject
 
+    def update_subject(self, subject_id: str, **changes: object) -> Subject | None:
+        """Update an existing subject and keep task labels synchronized."""
+        subject = self.get_subject_by_id(subject_id)
+        if subject is None:
+            return None
+        old_name = subject.name
+        for field_name in ("name", "code", "professor", "workload_hours", "color_hex"):
+            if field_name in changes:
+                setattr(subject, field_name, changes[field_name])
+        if subject.name != old_name:
+            for task in self._tasks:
+                if task.subject_id == subject_id:
+                    task.subject_name = subject.name
+        self._sync_to_session_state()
+        return subject
+
+    def delete_subject(self, subject_id: str) -> bool:
+        """Delete a subject and its dependent tasks."""
+        before = len(self._subjects)
+        self._subjects = [subject for subject in self._subjects if subject.id != subject_id]
+        if len(self._subjects) == before:
+            return False
+        self._tasks = [task for task in self._tasks if task.subject_id != subject_id]
+        self._sync_to_session_state()
+        return True
+
     def get_tasks(self) -> list[Task]:
         """Return list of all tasks with updated statuses."""
         self._update_computed_statuses()
@@ -217,6 +253,46 @@ class SimulatedDataService:
         self._tasks.append(task)
         self._sync_to_session_state()
         return task
+
+    def get_task_by_id(self, task_id: str) -> Task | None:
+        """Find a task by ID."""
+        return next((task for task in self._tasks if task.id == task_id), None)
+
+    def update_task(self, task_id: str, **changes: object) -> Task | None:
+        """Update editable fields of a task."""
+        task = self.get_task_by_id(task_id)
+        if task is None:
+            return None
+        for field_name in (
+            "title",
+            "subject_id",
+            "subject_name",
+            "due_date",
+            "status",
+            "priority",
+            "description",
+            "weight",
+        ):
+            if field_name in changes:
+                setattr(task, field_name, changes[field_name])
+        self._update_computed_statuses()
+        self._sync_to_session_state()
+        return task
+
+    def delete_task(self, task_id: str) -> bool:
+        """Delete a task by ID."""
+        before = len(self._tasks)
+        self._tasks = [task for task in self._tasks if task.id != task_id]
+        if len(self._tasks) == before:
+            return False
+        self._sync_to_session_state()
+        return True
+
+    def clear_all(self) -> None:
+        """Remove all academic data for the current user."""
+        self._subjects = []
+        self._tasks = []
+        self._sync_to_session_state()
 
     def toggle_task_status(self, task_id: str) -> Task | None:
         """Toggle task status between CONCLUIDA and PENDENTE/ATRASADA."""

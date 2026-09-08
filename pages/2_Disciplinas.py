@@ -1,9 +1,12 @@
 """Disciplinas management page view."""
 
+from html import escape
+
 import streamlit as st
 from src.core.auth_session import render_session_sidebar, require_authenticated
 from src.core.metrics import calculate_subject_progress
 from src.models.subject import Subject
+from src.services.demo_auth import DEMO_EMAIL
 from src.services.simulated_data import SimulatedDataService
 from src.ui.components import render_header
 from src.ui.theme import inject_custom_css
@@ -14,7 +17,7 @@ inject_custom_css()
 user = require_authenticated()
 render_session_sidebar(user)
 
-service = SimulatedDataService()
+service = SimulatedDataService(user_id=user["email"], seed_demo=user["email"] == DEMO_EMAIL)
 subjects = service.get_subjects()
 tasks = service.get_tasks()
 
@@ -52,20 +55,24 @@ with st.sidebar:
 
 # Display Subject Cards
 if not subjects:
-    st.info("Nenhuma disciplina cadastrada.")
+    st.info("Você ainda não cadastrou disciplinas. Use o formulário no menu lateral para começar.")
 else:
     cols = st.columns(2)
     for index, subj in enumerate(subjects):
         col = cols[index % 2]
         prog = calculate_subject_progress(tasks, subj.id)
+        safe_name = escape(subj.name)
+        safe_code = escape(subj.code)
+        safe_professor = escape(subj.professor)
+        safe_color = subj.color_hex if subj.color_hex.startswith("#") else "#1A3644"
 
         with col:
             with st.container():
                 st.markdown(
                     f"""
-                    <div style="border-left: 6px solid {subj.color_hex}; padding-left: 12px; margin-bottom: 8px;">
-                        <h3 style="margin: 0; color: #1A3644;">{subj.name} ({subj.code})</h3>
-                        <p style="margin: 4px 0; color: #64748B;">👨‍🏫 {subj.professor} • ⏱️ {subj.workload_hours}h de Carga Horária</p>
+                    <div style="border-left: 6px solid {safe_color}; padding-left: 12px; margin-bottom: 8px;">
+                        <h3 style="margin: 0;">{safe_name} ({safe_code})</h3>
+                        <p style="margin: 4px 0;">👨‍🏫 {safe_professor} • ⏱️ {subj.workload_hours}h de Carga Horária</p>
                     </div>
                     """,
                     unsafe_allow_html=True,
@@ -80,4 +87,57 @@ else:
                 c_p1.metric("Total", prog["total_tasks"])
                 c_p2.metric("Pendentes", prog["pending_tasks"])
                 c_p3.metric("Atrasadas", prog["overdue_tasks"])
+
+                details_tab, edit_tab, delete_tab = st.tabs(["Detalhes", "Editar", "Excluir"])
+                with details_tab:
+                    st.write(f"Código: **{subj.code}**")
+                    st.write(f"Professor(a): **{subj.professor}**")
+                    st.write(f"Carga horária: **{subj.workload_hours} horas**")
+
+                with edit_tab:
+                    with st.form(f"edit_subject_{subj.id}"):
+                        edit_name = st.text_input("Nome", value=subj.name)
+                        edit_code = st.text_input("Código", value=subj.code)
+                        edit_professor = st.text_input("Professor(a)", value=subj.professor)
+                        edit_workload = st.number_input(
+                            "Carga horária (h)",
+                            min_value=10,
+                            max_value=200,
+                            value=subj.workload_hours,
+                        )
+                        edit_color = st.color_picker("Cor", value=subj.color_hex)
+                        save_subject = st.form_submit_button(
+                            "Salvar alterações", type="primary", width="stretch"
+                        )
+                    if save_subject:
+                        if edit_name.strip() and edit_code.strip():
+                            service.update_subject(
+                                subj.id,
+                                name=edit_name.strip(),
+                                code=edit_code.strip(),
+                                professor=edit_professor.strip() or "Não informado",
+                                workload_hours=int(edit_workload),
+                                color_hex=edit_color,
+                            )
+                            st.success("Disciplina atualizada.")
+                            st.rerun()
+                        else:
+                            st.error("Nome e código são obrigatórios.")
+
+                with delete_tab:
+                    linked_tasks = prog["total_tasks"]
+                    st.warning(f"A exclusão também removerá {linked_tasks} tarefa(s) vinculada(s).")
+                    confirm_delete = st.checkbox(
+                        "Confirmo a exclusão desta disciplina",
+                        key=f"confirm_subject_{subj.id}",
+                    )
+                    if st.button(
+                        "Excluir disciplina",
+                        key=f"delete_subject_{subj.id}",
+                        disabled=not confirm_delete,
+                        width="stretch",
+                    ):
+                        service.delete_subject(subj.id)
+                        st.success("Disciplina excluída.")
+                        st.rerun()
                 st.divider()

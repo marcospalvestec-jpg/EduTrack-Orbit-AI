@@ -22,7 +22,12 @@ def test_demo_login_opens_authenticated_home():
 
 
 def test_protected_pages_stop_without_login():
-    for path in ["pages/1_Dashboard.py", "pages/2_Disciplinas.py", "pages/3_Tarefas.py"]:
+    for path in [
+        "pages/1_Dashboard.py",
+        "pages/2_Disciplinas.py",
+        "pages/3_Tarefas.py",
+        "pages/4_Perfil.py",
+    ]:
         app = AppTest.from_file(PROJECT_ROOT / path, default_timeout=15).run()
 
         assert not app.exception
@@ -30,7 +35,12 @@ def test_protected_pages_stop_without_login():
 
 
 def test_protected_pages_render_with_authenticated_session():
-    for path in ["pages/1_Dashboard.py", "pages/2_Disciplinas.py", "pages/3_Tarefas.py"]:
+    for path in [
+        "pages/1_Dashboard.py",
+        "pages/2_Disciplinas.py",
+        "pages/3_Tarefas.py",
+        "pages/4_Perfil.py",
+    ]:
         app = AppTest.from_file(PROJECT_ROOT / path, default_timeout=15)
         app.session_state["auth_current_user"] = {
             "name": "Estudante Demo",
@@ -42,3 +52,34 @@ def test_protected_pages_render_with_authenticated_session():
 
         assert not app.exception
         assert any(button.label == "Sair" for button in app.button)
+
+
+def test_new_account_home_starts_empty():
+    """A newly registered user must not inherit the demonstration dataset."""
+    email = "nova.conta@example.com"
+    app = AppTest.from_file(PROJECT_ROOT / "app.py", default_timeout=15)
+    app.session_state["auth_current_user"] = {"name": "Nova Conta", "email": email}
+    app.session_state["auth_demo_users"] = {}
+    app.session_state["auth_recovery_email"] = None
+    app.run()
+
+    assert not app.exception
+    assert app.session_state[f"subjects:{email}"] == []
+    assert app.session_state[f"tasks:{email}"] == []
+    assert any("Sua conta está pronta" in info.value for info in app.info)
+
+
+def test_profile_shows_account_without_exposing_password():
+    """The profile displays public fields and never renders a stored password."""
+    app = AppTest.from_file(PROJECT_ROOT / "pages/4_Perfil.py", default_timeout=15)
+    app.session_state["auth_current_user"] = {
+        "name": "Estudante Teste",
+        "email": "estudante@example.com",
+    }
+    app.session_state["auth_demo_users"] = {}
+    app.session_state["auth_recovery_email"] = None
+    app.run()
+
+    assert not app.exception
+    assert any("estudante@example.com" in metric.value for metric in app.metric)
+    assert not any("password_hash" in markdown.value for markdown in app.markdown)

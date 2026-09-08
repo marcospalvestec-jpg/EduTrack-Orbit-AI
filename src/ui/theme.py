@@ -15,7 +15,16 @@ COLOR_OVERDUE_RED = "#EF4444"
 
 def inject_custom_css() -> None:
     """Inject custom CSS for EduTrack visual identity into Streamlit."""
-    dark_mode = st.sidebar.toggle("Modo escuro", key="edutrack_dark_mode")
+    state_key = "edutrack_dark_mode"
+    widget_key = "_edutrack_dark_mode_widget"
+    st.session_state.setdefault(state_key, False)
+    st.session_state.setdefault(widget_key, st.session_state[state_key])
+
+    def persist_theme() -> None:
+        st.session_state[state_key] = bool(st.session_state[widget_key])
+
+    st.sidebar.toggle("Modo escuro", key=widget_key, on_change=persist_theme)
+    dark_mode = bool(st.session_state[state_key])
 
     custom_css = """
     <style>
@@ -178,6 +187,11 @@ def inject_custom_css() -> None:
         color: #FFFFFF !important;
     }
 
+    [data-testid="stExpandSidebarButton"] button {
+        min-width: 2.75rem !important;
+        min-height: 2.75rem !important;
+    }
+
     /* Responsive Mobile Adjustments (<= 768px / 390px) */
     @media (max-width: 768px) {
         /* Allow columns to stack vertically on small screens */
@@ -268,6 +282,16 @@ def inject_custom_css() -> None:
                 background-color: rgba(11, 23, 32, 0.95);
             }
 
+            [data-testid="stHeader"] button,
+            [data-testid="stHeader"] svg,
+            [data-testid="stHeaderActionElements"] button,
+            [data-testid="stHeaderActionElements"] svg {
+                color: #F8FAFC !important;
+                fill: #F8FAFC !important;
+                stroke: #F8FAFC !important;
+                opacity: 1 !important;
+            }
+
             [data-testid="stSidebar"] {
                 background-color: #102532;
             }
@@ -302,6 +326,15 @@ def inject_custom_css() -> None:
 
             .edutrack-card-value {
                 color: #F3F7FA;
+            }
+
+            [data-testid="stTextInput"] input,
+            [data-testid="stTextArea"] textarea,
+            [data-testid="stNumberInput"] input,
+            [data-baseweb="select"] > div {
+                background-color: #142B39 !important;
+                color: #F3F7FA !important;
+                border-color: #456274 !important;
             }
             [data-testid="stExpandSidebarButton"] {
                 background-color: #7C3AED !important;
