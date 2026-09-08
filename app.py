@@ -2,8 +2,7 @@
 
 import streamlit as st
 from src.core.auth_session import current_user, initialize_auth_state, render_session_sidebar
-from src.services.demo_auth import DEMO_EMAIL
-from src.services.simulated_data import SimulatedDataService
+from src.services.data_service import data_service_for_user, load_academic_data
 from src.ui.auth import render_auth_portal
 from src.ui.components import render_header
 from src.ui.theme import inject_custom_css
@@ -31,11 +30,9 @@ if user is None:
     st.stop()
 
 # Initialize Simulated Data Service (persisted in st.session_state)
-service = SimulatedDataService(
-    user_id=user["email"],
-    seed_demo=user["email"] == DEMO_EMAIL,
-)
+service = data_service_for_user(user)
 render_session_sidebar(user)
+subjects, tasks = load_academic_data(service)
 
 # Sidebar Navigation Header & User Info
 with st.sidebar:
@@ -43,28 +40,25 @@ with st.sidebar:
     st.caption("Organize, acompanhe e evolua")
     st.divider()
 
-    if st.button("Carregar dados demonstrativos", width="stretch"):
-        service.reset_to_defaults()
-        st.success("Dados demonstrativos carregados.")
-        st.rerun()
+    if not getattr(service, "is_remote", False):
+        if st.button("Carregar dados demonstrativos", width="stretch"):
+            service.reset_to_defaults()
+            st.success("Dados demonstrativos carregados.")
+            st.rerun()
 
-    if subjects := service.get_subjects():
-        if st.button("Limpar meus dados", width="stretch"):
-            st.session_state["confirm_clear_data"] = True
-        if st.session_state.get("confirm_clear_data"):
-            st.warning(f"Isso excluirá {len(subjects)} disciplina(s) e todas as tarefas.")
-            confirm, cancel = st.columns(2)
-            if confirm.button("Confirmar", type="primary", width="stretch"):
-                service.clear_all()
-                st.session_state["confirm_clear_data"] = False
-                st.rerun()
-            if cancel.button("Cancelar", width="stretch"):
-                st.session_state["confirm_clear_data"] = False
-                st.rerun()
-
-# Main Entry Landing / Dashboard Overview
-subjects = service.get_subjects()
-tasks = service.get_tasks()
+        if subjects:
+            if st.button("Limpar meus dados", width="stretch"):
+                st.session_state["confirm_clear_data"] = True
+            if st.session_state.get("confirm_clear_data"):
+                st.warning(f"Isso excluirá {len(subjects)} disciplina(s) e todas as tarefas.")
+                confirm, cancel = st.columns(2)
+                if confirm.button("Confirmar", type="primary", width="stretch"):
+                    service.clear_all()
+                    st.session_state["confirm_clear_data"] = False
+                    st.rerun()
+                if cancel.button("Cancelar", width="stretch"):
+                    st.session_state["confirm_clear_data"] = False
+                    st.rerun()
 
 render_header(
     title="Bem-vindo ao EduTrack Orbit AI",
@@ -73,17 +67,23 @@ render_header(
 )
 
 if not subjects:
-    st.info(
-        "Sua conta está pronta. Cadastre a primeira disciplina ou carregue dados demonstrativos pelo menu lateral."
-    )
+    if getattr(service, "is_remote", False):
+        st.info("Sua conta está pronta. Cadastre sua primeira disciplina para começar.")
+    else:
+        st.info(
+            "Sua conta está pronta. Cadastre a primeira disciplina ou carregue dados demonstrativos pelo menu lateral."
+        )
     action_subject, action_demo = st.columns(2)
     with action_subject:
         if st.button("Cadastrar primeira disciplina", type="primary", width="stretch"):
             st.switch_page("pages/2_Disciplinas.py")
     with action_demo:
-        if st.button("Explorar com dados de exemplo", width="stretch"):
-            service.reset_to_defaults()
-            st.rerun()
+        if getattr(service, "is_remote", False):
+            st.caption("Seus dados serão salvos com segurança no Xano.")
+        else:
+            if st.button("Explorar com dados de exemplo", width="stretch"):
+                service.reset_to_defaults()
+                st.rerun()
 
 col1, col2 = st.columns([3, 2])
 
