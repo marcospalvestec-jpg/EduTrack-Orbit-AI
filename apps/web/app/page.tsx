@@ -20,6 +20,8 @@ export default function Home() {
   const [filters, setFilters] = useState(defaultFilters);
   const [subjectQuery, setSubjectQuery] = useState('');
   const [includeOverdue, setIncludeOverdue] = useState(false);
+  const [agendaMonth, setAgendaMonth] = useState('');
+  const [notice, setNotice] = useState('');
   const { phase, cycles, seconds, end } = timer;
 
   useEffect(() => {
@@ -72,6 +74,52 @@ export default function Home() {
     e.currentTarget.reset();
   }
 
+  function renameSubject(event: FormEvent<HTMLFormElement>, previous: string) {
+    event.preventDefault();
+    const name = String(new FormData(event.currentTarget).get('name') ?? '').trim();
+    if (!name || name === previous) return;
+    if (data.subjects.includes(name)) {
+      setNotice('Já existe uma disciplina com esse nome.');
+      return;
+    }
+    save({
+      subjects: data.subjects.map(subject => subject === previous ? name : subject),
+      tasks: data.tasks.map(task => task.subject === previous ? { ...task, subject: name } : task),
+    });
+    if (filters.subject === previous) setFilters({ ...filters, subject: name });
+    setNotice('Disciplina atualizada.');
+  }
+
+  function removeSubject(name: string) {
+    if (data.tasks.some(task => task.subject === name)) {
+      setNotice('Mova as tarefas para outra disciplina antes de excluir esta.');
+      return;
+    }
+    if (!window.confirm(`Excluir a disciplina “${name}”?`)) return;
+    save({ ...data, subjects: data.subjects.filter(subject => subject !== name) });
+    if (filters.subject === name) setFilters({ ...filters, subject: '' });
+    setNotice('Disciplina excluída.');
+  }
+
+  function editTask(event: FormEvent<HTMLFormElement>, task: Task) {
+    event.preventDefault();
+    const fields = new FormData(event.currentTarget);
+    const title = String(fields.get('title') ?? '').trim();
+    const subject = String(fields.get('subject') ?? '');
+    if (!title || !data.subjects.includes(subject)) return;
+    const updated: Task = { ...task, title, subject, deadline: String(fields.get('date') ?? ''), priority: fields.get('priority') === 'alta' ? 'alta' : 'normal' };
+    save({ ...data, tasks: data.tasks.map(item => item.id === task.id ? updated : item) });
+    event.currentTarget.closest('details')?.removeAttribute('open');
+    setNotice('Tarefa atualizada.');
+  }
+
+  function removeTask(task: Task) {
+    if (!window.confirm(`Excluir a tarefa “${task.title}”? Não é possível desfazer.`)) return;
+    save({ ...data, tasks: data.tasks.filter(item => item.id !== task.id) });
+    if (linked === task.id) setLinked('');
+    setNotice('Tarefa excluída.');
+  }
+
   const suggested = nextTask(data.tasks);
   const today = new Intl.DateTimeFormat('sv-SE', { timeZone: 'America/Sao_Paulo', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
   const visibleTasks = filterTasks(data.tasks, filters, today);
@@ -79,6 +127,10 @@ export default function Home() {
   const displayDate = (date: string) => date.split('-').reverse().join('/');
   const visibleSubjects = searchSubjects(data.subjects, data.tasks, subjectQuery, includeOverdue, today);
   const completed = data.tasks.filter(t => t.done).length;
+  const overdue = filterTasks(data.tasks, { ...defaultFilters, deadline: 'overdue' }, today).length;
+  const month = agendaMonth || today.slice(0, 7);
+  const agenda = data.tasks.filter(task => task.deadline.startsWith(month + '-'))
+    .sort((a, b) => a.deadline.localeCompare(b.deadline));
   const time = `${String(Math.floor(seconds / 60)).padStart(2, '0')}:${String(seconds % 60).padStart(2, '0')}`;
 
   return <main className="mx-auto max-w-6xl px-5 py-8 sm:px-10 sm:py-12">
@@ -87,7 +139,20 @@ export default function Home() {
       <h1>Seu espaço de estudo</h1>
       <p className="muted">Organize suas atividades e reserve tempo para o que importa.</p>
       <p className="badge">Demonstração local · os dados ficam neste navegador</p>
+      <nav className="flex flex-wrap gap-4 mt-5" aria-label="Seções do EduTrack">
+        <a href="#subjects-title">Disciplinas</a><a href="#tasks-title">Tarefas</a>
+        <a href="#agenda-title">Agenda</a><a href="#timer-title">Pomodoro</a><a href="#weekly-title">Relatório</a>
+      </nav>
     </header>
+    <section className="panel mb-5" aria-label="Resumo acadêmico">
+      <dl className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+        <div><dt>Disciplinas</dt><dd className="suggestion">{data.subjects.length}</dd></div>
+        <div><dt>Pendentes</dt><dd className="suggestion">{data.tasks.length - completed}</dd></div>
+        <div><dt>Atrasadas</dt><dd className="suggestion">{overdue}</dd></div>
+        <div><dt>Concluídas</dt><dd className="suggestion">{completed}</dd></div>
+      </dl>
+    </section>
+    <p className="muted mb-3" role="status">{notice}</p>
     {storageError && <p role="alert">O armazenamento local não está disponível. Não foi possível carregar ou salvar seus dados no navegador.</p>}
     <div className="grid gap-5 md:grid-cols-2">
       <section className="panel" aria-labelledby="timer-title">
@@ -132,7 +197,15 @@ export default function Home() {
           {!visibleSubjects.length && <p role="status">Nenhuma disciplina encontrada.</p>}
           <ul className="subject-list">{visibleSubjects.map(subject => {
             const progress = subjectProgress(data.tasks, subject);
-            return <li key={subject}><strong>{subject}</strong><p className="muted">{progress.completed} de {progress.total} concluídas · {progress.percent}%</p><progress aria-label={`Progresso em ${subject}`} value={progress.percent} max={100} /></li>;
+            return <li key={subject}><strong>{subject}</strong><p className="muted">{progress.completed} de {progress.total} concluídas · {progress.percent}%</p><progress aria-label={`Progresso em ${subject}`} value={progress.percent} max={100} />
+              <details className="my-2">
+                <summary className="cursor-pointer">Gerenciar disciplina</summary>
+                <form className="form mt-2" onSubmit={event => renameSubject(event, subject)}>
+                  <label>Novo nome<input name="name" defaultValue={subject} maxLength={80} required /></label>
+                  <div className="flex flex-wrap gap-2"><button>Salvar nome</button><button type="button" onClick={() => removeSubject(subject)}>Excluir disciplina</button></div>
+                </form>
+              </details>
+            </li>;
           })}</ul>
         </div>}
       </section>
@@ -160,12 +233,32 @@ export default function Home() {
         </fieldset>}
         <ul className="task-list">{visibleTasks.map(t => <li key={t.id}><label>
           <input type="checkbox" checked={t.done} onChange={() => save({ ...data, tasks: data.tasks.map(item => item.id === t.id ? { ...item, done: !item.done } : item) })} />
-          <span>{t.title}<small>{t.subject}</small></span>
-        </label></li>)}</ul>
+          <span>{t.title}<small>{t.subject} · {t.deadline ? displayDate(t.deadline) : 'Sem prazo'} · {t.done ? 'Concluída' : t.deadline && t.deadline < today ? 'Atrasada' : 'Pendente'}</small></span>
+        </label>
+          <details className="my-2">
+            <summary className="cursor-pointer">Gerenciar tarefa</summary>
+            <form className="form mt-2" onSubmit={event => editTask(event, t)}>
+              <label>Título<input name="title" defaultValue={t.title} required maxLength={120} /></label>
+              <label>Disciplina<select name="subject" defaultValue={t.subject} key={t.subject}>{data.subjects.map(subject => <option key={subject}>{subject}</option>)}</select></label>
+              <label>Prazo<input type="date" name="date" defaultValue={t.deadline} /></label>
+              <label>Prioridade<select name="priority" defaultValue={t.priority}><option value="normal">Normal</option><option value="alta">Alta</option></select></label>
+              <div className="flex flex-wrap gap-2"><button>Salvar tarefa</button><button type="button" onClick={() => removeTask(t)}>Excluir tarefa</button></div>
+            </form>
+          </details>
+        </li>)}</ul>
       </section>
     </div>
+    <section className="panel mt-5" aria-labelledby="agenda-title">
+      <p className="eyebrow">05 / PRAZOS</p>
+      <h2 id="agenda-title">Agenda de tarefas</h2>
+      <label className="form sm:max-w-xs">Mês<input type="month" value={month} onChange={event => setAgendaMonth(event.target.value)} /></label>
+      {!agenda.length ? <p className="muted mt-3">Nenhuma tarefa com prazo neste mês.</p> :
+        <ol className="task-list">{agenda.map(task => <li key={task.id}>
+          <time dateTime={task.deadline}>{displayDate(task.deadline)}</time> · <strong>{task.title}</strong> · {task.subject} · {task.done ? 'Concluída' : task.deadline < today ? 'Atrasada' : 'Pendente'}
+        </li>)}</ol>}
+    </section>
     <section className="panel weekly-report mt-5" aria-labelledby="weekly-title">
-      <p className="eyebrow">05 / RELATÓRIO</p>
+      <p className="eyebrow">06 / RELATÓRIO</p>
       <h2 id="weekly-title">EduTrack · Relatório semanal</h2>
       <p>De {displayDate(week.start)} a {displayDate(week.end)}</p>
       <p>{week.completed} de {week.tasks.length} tarefas concluídas</p>
