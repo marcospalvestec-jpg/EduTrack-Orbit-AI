@@ -6,6 +6,13 @@ import { defaultFilters, duration, filterTasks, nextPhase, nextTask, remaining, 
 
 const labels = { focus: 'Foco', short: 'Pausa curta', long: 'Pausa longa' };
 const key = 'edutrack-web-demo-v1';
+const themeKey = 'edutrack-web-theme';
+type Theme = 'system' | 'light' | 'dark';
+
+function applyTheme(theme: Theme) {
+  if (theme === 'system') delete document.documentElement.dataset.theme;
+  else document.documentElement.dataset.theme = theme;
+}
 const sections = {"inicio":"visao-geral","subjects-title":"disciplinas","tasks-title":"tarefas","agenda-title":"agenda","timer-title":"pomodoro","insight-title":"orbit","weekly-title":"relatorio"} as const;
 type Section = typeof sections[keyof typeof sections];
 
@@ -31,6 +38,23 @@ export default function Home() {
   const [agendaMonth, setAgendaMonth] = useState('');
   const [notice, setNotice] = useState('');
   const [menuOpen, setMenuOpen] = useState(true);
+  const [theme, setTheme] = useState<Theme>('system');
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(themeKey);
+      if (saved === 'light' || saved === 'dark') {
+        setTheme(saved);
+        applyTheme(saved);
+      }
+    } catch { /* The system theme still works without local storage. */ }
+  }, []);
+
+  function changeTheme(value: Theme) {
+    setTheme(value);
+    applyTheme(value);
+    try { localStorage.setItem(themeKey, value); }
+    catch { /* Keep the choice for this visit. */ }
+  }
   const [section, setSection] = useState<Section>('visao-geral');
   useEffect(() => {
     const sync = () => setSection(sectionFromHash());
@@ -172,6 +196,14 @@ export default function Home() {
         <a className="orbit-link" {...navigation('orbit')}>Sugestão do Orbit</a>
         <a className="orbit-link" {...navigation('relatorio')}>Relatório semanal</a>
       </nav>
+      <label className="form mt-5">
+        <span className="eyebrow">Tema</span>
+        <select value={theme} onChange={event => changeTheme(event.target.value as Theme)}>
+          <option value="system">Sistema</option>
+          <option value="light">Claro</option>
+          <option value="dark">Escuro</option>
+        </select>
+      </label>
     </aside>
     <main id="inicio" className="mx-auto w-full max-w-6xl px-5 py-8 sm:px-10 sm:py-12">
     <header className="mb-10" hidden={section !== 'visao-geral'}>

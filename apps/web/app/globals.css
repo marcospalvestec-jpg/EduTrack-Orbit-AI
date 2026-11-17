@@ -1,8 +1,9 @@
 @import 'tailwindcss';
 
-:root { color-scheme: light dark; --bg: #fff6fa; --surface: #fff; --ink: #30182c; --muted: #68495f; --line: #e7cadb; --accent: #981b64; }
+:root { color-scheme: light; --bg: #fff6fa; --surface: #fff; --ink: #30182c; --muted: #68495f; --line: #e7cadb; --accent: #981b64; }
+:root[data-theme="dark"] { color-scheme: dark; --bg: #160e20; --surface: #23162d; --ink: #fff0f7; --muted: #d8b9ce; --line: #543853; --accent: #a92373; }
 @media (prefers-color-scheme: dark) {
-  :root { --bg: #160e20; --surface: #23162d; --ink: #fff0f7; --muted: #d8b9ce; --line: #543853; --accent: #a92373; }
+  :root:not([data-theme]) { color-scheme: dark; --bg: #160e20; --surface: #23162d; --ink: #fff0f7; --muted: #d8b9ce; --line: #543853; --accent: #a92373; }
 }
 body { background: var(--bg); color: var(--ink); font-family: Outfit, system-ui, sans-serif; }
 h1 { font-size: clamp(2.25rem, 6vw, 4rem); font-weight: 750; line-height: 1.1; margin: .35rem 0 .85rem; letter-spacing: -.045em; }
@@ -52,7 +53,7 @@ main h2[id] { scroll-margin-top: 1rem; }
 }
 
 @media print {
-  :root { color-scheme: light; --bg: white; --surface: white; --ink: black; --muted: #333; --line: #bbb; }
+  :root:is([data-theme], :not([data-theme])) { color-scheme: light; --bg: white; --surface: white; --ink: black; --muted: #333; --line: #bbb; }
   .orbit-shell { display: block; }
   .orbit-sidebar, main > :not(.weekly-report), .weekly-report button { display: none !important; }
   .weekly-report { border: 0; margin: 0; padding: 0; }
