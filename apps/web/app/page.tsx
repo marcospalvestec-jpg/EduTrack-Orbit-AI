@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, type FormEvent } from 'react';
+import { weeklyReport } from '../lib/weekly';
 import { defaultFilters, duration, filterTasks, nextPhase, nextTask, remaining, searchSubjects, subjectProgress, type Phase, type Task, type TaskFilters } from '../lib/study';
 
 const labels = { focus: 'Foco', short: 'Pausa curta', long: 'Pausa longa' };
@@ -74,6 +75,8 @@ export default function Home() {
   const suggested = nextTask(data.tasks);
   const today = new Intl.DateTimeFormat('sv-SE', { timeZone: 'America/Sao_Paulo', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
   const visibleTasks = filterTasks(data.tasks, filters, today);
+  const week = weeklyReport(data.tasks, today);
+  const displayDate = (date: string) => date.split('-').reverse().join('/');
   const visibleSubjects = searchSubjects(data.subjects, data.tasks, subjectQuery, includeOverdue, today);
   const completed = data.tasks.filter(t => t.done).length;
   const time = `${String(Math.floor(seconds / 60)).padStart(2, '0')}:${String(seconds % 60).padStart(2, '0')}`;
@@ -161,5 +164,17 @@ export default function Home() {
         </label></li>)}</ul>
       </section>
     </div>
+    <section className="panel weekly-report mt-5" aria-labelledby="weekly-title">
+      <p className="eyebrow">05 / RELATÓRIO</p>
+      <h2 id="weekly-title">EduTrack · Relatório semanal</h2>
+      <p>De {displayDate(week.start)} a {displayDate(week.end)}</p>
+      <p>{week.completed} de {week.tasks.length} tarefas concluídas</p>
+      <p className="muted">Inclui tarefas com vencimento nesta semana.</p>
+      {week.tasks.length === 0 ? <p className="mt-3">Nenhuma tarefa com prazo nesta semana.</p> :
+        <ul className="task-list">{week.tasks.map(task => <li key={task.id}>
+          <strong>{task.title}</strong> — {task.subject} · {displayDate(task.deadline)} · {task.done ? 'Concluída' : 'Pendente'}
+        </li>)}</ul>}
+      <button className="accent mt-4" type="button" disabled={!loaded} onClick={() => window.print()}>Imprimir ou salvar como PDF</button>
+    </section>
   </main>;
 }

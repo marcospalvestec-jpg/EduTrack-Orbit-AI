@@ -17,5 +17,5 @@ O adaptador `lib/xano.ts` cobre cadastro, login, perfil e listagem e criação d
 
 - 12: a versão web calcula o percentual de tarefas concluídas de cada disciplina em TypeScript. Para evidência literal em Python, o legado mantém o cálculo em `src/core/metrics.py`.
 - 14: em Disciplinas, digite um nome ou marque a opção para incluir disciplinas com tarefas atrasadas. A combinação é por **OU**. A versão atual filtra os dados locais; ainda não demonstra o endpoint híbrido Xano + Python pedido no enunciado original.
-- 15: o legado fornece PDF; a exportação ainda não foi portada para a web.
+- 15: o relatório web lista as tarefas com vencimento entre segunda e domingo. Use “Imprimir ou salvar como PDF” e selecione “Salvar como PDF” no diálogo do navegador. O endpoint Xano/Python exigido no enunciado original não faz parte desta versão.
 - 16: falta demonstrar a jornada completa da nova versão, com conta e persistência no servidor, e consolidar o PR e as evidências.
