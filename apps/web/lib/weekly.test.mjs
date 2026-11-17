@@ -1,6 +1,17 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { weeklyReport } from './weekly.ts';
+import { completionHistory, weeklyReport } from './weekly.ts';
+
+test('groups dated completions by week and ignores undone, undated and future tasks', () => {
+  const counts = completionHistory([
+    { done: true, completedOn: '2026-12-28' },
+    { done: true, completedOn: '2027-01-05' },
+    { done: true, completedOn: '2027-01-06' },
+    { done: false, completedOn: '2027-01-05' },
+    { done: true, deadline: '2027-01-05' },
+  ], '2027-01-05').map(week => week.count);
+  assert.deepEqual(counts, [0, 0, 0, 0, 1, 1]);
+});
 
 test('includes Monday through Sunday, across a year boundary', () => {
   const deadlines = ['2026-12-27','2026-12-28','2027-01-03','2027-01-04',''];

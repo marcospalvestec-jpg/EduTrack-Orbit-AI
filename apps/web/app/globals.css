@@ -28,6 +28,10 @@ button:disabled { cursor: default; opacity: .6; }
 .task-list li, .subject-list li { border-top: 1px solid var(--line); padding: .6rem 0; }
 .task-list label { display: flex; align-items: center; min-height: 44px; gap: .8rem; }
 .task-list small { display: block; color: var(--muted); }
+.study-history { margin-block: 1rem 1.5rem; break-inside: avoid; }
+.study-history-row { display: grid; grid-template-columns: 3.25rem minmax(0, 1fr) 2.5rem; gap: .6rem; align-items: center; }
+.study-history-track { background: var(--bg); border: 1px solid var(--line); border-radius: 1rem; height: .8rem; overflow: hidden; }
+.study-history-track span { display: block; height: 100%; background: var(--accent); border-radius: inherit; print-color-adjust: exact; }
 
 .orbit-shell { display: grid; grid-template-columns: minmax(0, 1fr); }
 .orbit-sidebar { background: var(--surface); border-bottom: 1px solid var(--line); padding: 1rem; }

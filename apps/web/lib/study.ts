@@ -1,5 +1,5 @@
 export type Phase = 'focus' | 'short' | 'long';
-export type Task = { id: string; title: string; subject: string; deadline: string; priority: 'normal' | 'alta'; done: boolean };
+export type Task = { id: string; title: string; subject: string; deadline: string; priority: 'normal' | 'alta'; done: boolean; completedOn?: string };
 export type TaskFilters = { subject: string; status: 'all' | 'pending' | 'done'; deadline: 'all' | 'overdue' | 'today' | 'none' };
 export const defaultFilters: TaskFilters = { subject: '', status: 'all', deadline: 'all' };
 export function subjectProgress(tasks: Task[], subject: string) {

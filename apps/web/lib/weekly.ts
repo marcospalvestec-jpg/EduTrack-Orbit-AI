@@ -1,5 +1,16 @@
 import type { Task } from './study';
 
+export function completionHistory(tasks: Task[], today: string) {
+  const currentWeek = new Date(weeklyReport([], today).start + 'T00:00:00Z');
+  return Array.from({ length: 6 }, (_, index) => {
+    const start = new Date(currentWeek);
+    start.setUTCDate(start.getUTCDate() - (5 - index) * 7);
+    const week = weeklyReport([], start.toISOString().slice(0, 10));
+    const end = week.end < today ? week.end : today;
+    return { start: week.start, count: tasks.filter(task => task.done && task.completedOn && task.completedOn >= week.start && task.completedOn <= end).length };
+  });
+}
+
 export function weeklyReport(tasks: Task[], today: string) {
   const monday = new Date(today + 'T00:00:00Z');
   monday.setUTCDate(monday.getUTCDate() - (monday.getUTCDay() + 6) % 7);

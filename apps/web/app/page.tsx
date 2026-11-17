@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, type FormEvent } from 'react';
-import { weeklyReport } from '../lib/weekly';
+import { completionHistory, weeklyReport } from '../lib/weekly';
 import { revisionSessions, type Outcome, type RevisionPlan } from '../lib/revision';
 import { defaultFilters, duration, filterTasks, nextPhase, nextTask, remaining, searchSubjects, subjectProgress, type Phase, type Task, type TaskFilters } from '../lib/study';
 
@@ -203,6 +203,8 @@ export default function Home() {
   }
   const visibleTasks = filterTasks(data.tasks, filters, today);
   const week = weeklyReport(data.tasks, today);
+  const history = completionHistory(data.tasks, today);
+  const maxCompleted = Math.max(1, ...history.map(item => item.count));
   const displayDate = (date: string) => date.split('-').reverse().join('/');
   const visibleSubjects = searchSubjects(data.subjects, data.tasks, subjectQuery, includeOverdue, today);
   const completed = data.tasks.filter(t => t.done).length;
@@ -348,7 +350,7 @@ export default function Home() {
           <p className="muted" aria-live="polite">{visibleTasks.length ? `${visibleTasks.length} de ${data.tasks.length} tarefas` : 'Nenhuma tarefa corresponde aos filtros.'}</p>
         </fieldset>}
         <ul className="task-list">{visibleTasks.map(t => <li key={t.id}><label>
-          <input type="checkbox" checked={t.done} onChange={() => save({ ...data, tasks: data.tasks.map(item => item.id === t.id ? { ...item, done: !item.done } : item) })} />
+          <input type="checkbox" checked={t.done} onChange={() => save({ ...data, tasks: data.tasks.map(item => item.id === t.id ? { ...item, done: !item.done, completedOn: item.done ? undefined : today } : item) })} />
           <span>{t.title}<small>{t.subject} · {t.deadline ? displayDate(t.deadline) : 'Sem prazo'} · {t.done ? 'Concluída' : t.deadline && t.deadline < today ? 'Atrasada' : 'Pendente'}</small></span>
         </label>
           <details className="my-2">
@@ -414,6 +416,16 @@ export default function Home() {
     <section className="panel weekly-report mt-5" aria-labelledby="weekly-title" hidden={section !== 'relatorio'} key="weekly-title">
       <p className="eyebrow">06 / RELATÓRIO</p>
       <h2 id="weekly-title">EduTrack · Relatório semanal</h2>
+      <figure className="study-history" aria-labelledby="history-title">
+        <figcaption id="history-title" className="suggestion">Evolução dos estudos</figcaption>
+        <p className="muted">Tarefas concluídas nas últimas 6 semanas, por data de conclusão. As datas abaixo indicam o início de cada semana.</p>
+        {!history.some(item => item.count > 0) && <p className="muted mt-2">Marque uma tarefa como concluída para começar seu histórico.</p>}
+        <ol className="mt-3 grid gap-2">{history.map(item => <li className="study-history-row" key={item.start}>
+          <time dateTime={item.start}>{displayDate(item.start).slice(0, 5)}</time>
+          <div className="study-history-track" aria-hidden="true"><span style={{ width: (100 * item.count / maxCompleted) + '%' }} /></div>
+          <strong aria-label={item.count + ' tarefas concluídas'}>{item.count}</strong>
+        </li>)}</ol>
+      </figure>
       <p>De {displayDate(week.start)} a {displayDate(week.end)}</p>
       <p>{week.completed} de {week.tasks.length} tarefas concluídas</p>
       <p className="muted">Inclui tarefas com vencimento nesta semana.</p>
