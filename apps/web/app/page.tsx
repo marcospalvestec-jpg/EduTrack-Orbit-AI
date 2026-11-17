@@ -186,7 +186,14 @@ export default function Home() {
 
   return <div className="orbit-shell">
     <aside className="orbit-sidebar" aria-label="Barra lateral">
-      <a className="orbit-mark" href="#visao-geral">EduTrack <span>Orbit AI</span></a>
+      <a className="orbit-mark" href="#visao-geral">EduTrack <span>Orbit AI</span>
+        <svg className="ml-1.5 inline-block align-middle text-[var(--accent)]" aria-hidden="true" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+          <rect x="4" y="7" width="16" height="13" rx="4" />
+          <path d="M12 7V4m-2 0h4M2 13v2m20-2v2M9 16h6" />
+          <circle cx="9" cy="12" r=".8" fill="currentColor" stroke="none" />
+          <circle cx="15" cy="12" r=".8" fill="currentColor" stroke="none" />
+        </svg>
+      </a>
       <nav aria-label="Seções do EduTrack">
         <a className="orbit-link" {...navigation('visao-geral')}>Visão geral</a>
         <button type="button" className="orbit-menu-toggle" aria-expanded={menuOpen} aria-controls="study-submenu" onClick={() => setMenuOpen(open => !open)}>
