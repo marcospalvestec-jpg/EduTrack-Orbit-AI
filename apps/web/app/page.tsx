@@ -201,9 +201,9 @@ export default function Home() {
         </button>
         <div id="study-submenu" className="orbit-submenu" data-open={menuOpen} inert={!menuOpen}>
           <ul>
-            <li><a className="orbit-link" {...navigation('disciplinas')}>Disciplinas</a></li>
-            <li><a className="orbit-link" {...navigation('tarefas')}>Tarefas</a></li>
-            <li><a className="orbit-link" {...navigation('agenda')}>Agenda</a></li>
+            <li><a className="orbit-link" {...navigation('disciplinas')}><SubmenuIcon name="book" />Disciplinas</a></li>
+            <li><a className="orbit-link" {...navigation('tarefas')}><SubmenuIcon name="checklist" />Tarefas</a></li>
+            <li><a className="orbit-link" {...navigation('agenda')}><SubmenuIcon name="calendar" />Agenda</a></li>
           </ul>
         </div>
         <a className="orbit-link" {...navigation('pomodoro')}>Pomodoro</a>
@@ -359,4 +359,15 @@ export default function Home() {
     </section>
     </main>
   </div>;
+}
+
+function SubmenuIcon({ name }: { name: 'book' | 'checklist' | 'calendar' }) {
+  const paths = {
+    book: 'M12 6v14M12 6C9 4 6 4 3 5v14c3-1 6-1 9 1 3-2 6-2 9-1V5c-3-1-6-1-9 1Z',
+    checklist: 'm3 6 2 2 3-4m-5 9 2 2 3-4m-5 9 2 2 3-4M12 6h9m-9 7h9m-9 7h9',
+    calendar: 'M7 3v4m10-4v4M3 10h18M5 5h14a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2Z',
+  };
+  return <svg className="mr-2 shrink-0" aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <path d={paths[name]} />
+  </svg>;
 }
