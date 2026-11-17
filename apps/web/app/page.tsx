@@ -6,6 +6,14 @@ import { defaultFilters, duration, filterTasks, nextPhase, nextTask, remaining, 
 
 const labels = { focus: 'Foco', short: 'Pausa curta', long: 'Pausa longa' };
 const key = 'edutrack-web-demo-v1';
+const sections = {"inicio":"visao-geral","subjects-title":"disciplinas","tasks-title":"tarefas","agenda-title":"agenda","timer-title":"pomodoro","insight-title":"orbit","weekly-title":"relatorio"} as const;
+type Section = typeof sections[keyof typeof sections];
+
+function sectionFromHash(): Section {
+  const hash = window.location.hash.slice(1);
+  if (Object.hasOwn(sections, hash)) return sections[hash as keyof typeof sections];
+  return Object.values(sections).find(section => section === hash) ?? 'visao-geral';
+}
 type Data = { subjects: string[]; tasks: Task[] };
 const empty: Data = { subjects: [], tasks: [] };
 type Timer = { phase: Phase; cycles: number; seconds: number; end: number | null };
@@ -23,6 +31,17 @@ export default function Home() {
   const [agendaMonth, setAgendaMonth] = useState('');
   const [notice, setNotice] = useState('');
   const [menuOpen, setMenuOpen] = useState(true);
+  const [section, setSection] = useState<Section>('visao-geral');
+  useEffect(() => {
+    const sync = () => setSection(sectionFromHash());
+    sync();
+    window.addEventListener('hashchange', sync);
+    return () => window.removeEventListener('hashchange', sync);
+  }, []);
+
+  function navigation(target: Section) {
+    return { href: '#' + target, 'aria-current': section === target ? 'page' as const : undefined };
+  }
   const { phase, cycles, seconds, end } = timer;
 
   useEffect(() => {
@@ -136,32 +155,32 @@ export default function Home() {
 
   return <div className="orbit-shell">
     <aside className="orbit-sidebar" aria-label="Barra lateral">
-      <a className="orbit-mark" href="#inicio">EduTrack <span>Orbit AI</span></a>
+      <a className="orbit-mark" href="#visao-geral">EduTrack <span>Orbit AI</span></a>
       <nav aria-label="Seções do EduTrack">
-        <a className="orbit-link" href="#inicio">Visão geral</a>
+        <a className="orbit-link" {...navigation('visao-geral')}>Visão geral</a>
         <button type="button" className="orbit-menu-toggle" aria-expanded={menuOpen} aria-controls="study-submenu" onClick={() => setMenuOpen(open => !open)}>
           Organização <span aria-hidden="true" className="orbit-chevron">⌄</span>
         </button>
         <div id="study-submenu" className="orbit-submenu" data-open={menuOpen} inert={!menuOpen}>
           <ul>
-            <li><a className="orbit-link" href="#subjects-title">Disciplinas</a></li>
-            <li><a className="orbit-link" href="#tasks-title">Tarefas</a></li>
-            <li><a className="orbit-link" href="#agenda-title">Agenda</a></li>
+            <li><a className="orbit-link" {...navigation('disciplinas')}>Disciplinas</a></li>
+            <li><a className="orbit-link" {...navigation('tarefas')}>Tarefas</a></li>
+            <li><a className="orbit-link" {...navigation('agenda')}>Agenda</a></li>
           </ul>
         </div>
-        <a className="orbit-link" href="#timer-title">Pomodoro</a>
-        <a className="orbit-link" href="#insight-title">Sugestão do Orbit</a>
-        <a className="orbit-link" href="#weekly-title">Relatório semanal</a>
+        <a className="orbit-link" {...navigation('pomodoro')}>Pomodoro</a>
+        <a className="orbit-link" {...navigation('orbit')}>Sugestão do Orbit</a>
+        <a className="orbit-link" {...navigation('relatorio')}>Relatório semanal</a>
       </nav>
     </aside>
     <main id="inicio" className="mx-auto w-full max-w-6xl px-5 py-8 sm:px-10 sm:py-12">
-    <header className="mb-10">
+    <header className="mb-10" hidden={section !== 'visao-geral'}>
       <p className="eyebrow">EDUTRACK / ORBIT AI</p>
       <h1>Seu espaço de estudo</h1>
       <p className="muted">Organize suas atividades e reserve tempo para o que importa.</p>
       <p className="badge">Demonstração local · os dados ficam neste navegador</p>
     </header>
-    <section className="panel mb-5" aria-label="Resumo acadêmico">
+    <section className="panel mb-5" aria-label="Resumo acadêmico" hidden={section !== 'visao-geral'}>
       <dl className="grid grid-cols-2 gap-4 sm:grid-cols-4">
         <div><dt>Disciplinas</dt><dd className="suggestion">{data.subjects.length}</dd></div>
         <div><dt>Pendentes</dt><dd className="suggestion">{data.tasks.length - completed}</dd></div>
@@ -171,8 +190,8 @@ export default function Home() {
     </section>
     <p className="muted mb-3" role="status">{notice}</p>
     {storageError && <p role="alert">O armazenamento local não está disponível. Não foi possível carregar ou salvar seus dados no navegador.</p>}
-    <div className="grid gap-5 md:grid-cols-2">
-      <section className="panel" aria-labelledby="timer-title">
+    <div>
+      <section className="panel" aria-labelledby="timer-title" hidden={section !== 'pomodoro'} key="timer-title">
         <p className="eyebrow">01 / SESSÃO DE ESTUDO</p>
         <h2 id="timer-title">Pomodoro</h2>
         <p aria-live="polite">{labels[phase]} · {cycles} {cycles === 1 ? 'ciclo concluído' : 'ciclos concluídos'}</p>
@@ -191,7 +210,7 @@ export default function Home() {
         </div>
         <p className="muted mt-4">25 min de foco · 5 min de pausa · 15 min após quatro ciclos</p>
       </section>
-      <section className="panel" aria-labelledby="insight-title">
+      <section className="panel" aria-labelledby="insight-title" hidden={section !== 'orbit'} key="insight-title">
         <p className="eyebrow">02 / PRÓXIMO PASSO</p>
         <h2 id="insight-title">Sugestão do Orbit</h2>
         {suggested ? <>
@@ -201,7 +220,7 @@ export default function Home() {
         </> : <p className="muted">{completed ? 'Tudo em dia. Aproveite para descansar ou planejar a semana.' : 'Cadastre uma disciplina e uma tarefa para receber sua primeira sugestão.'}</p>}
         <p className="mt-5" aria-live="polite">{completed} de {data.tasks.length} tarefas concluídas. {completed ? 'Cada conclusão conta.' : 'Comece por uma etapa pequena.'}</p>
       </section>
-      <section className="panel" aria-labelledby="subjects-title">
+      <section className="panel" aria-labelledby="subjects-title" hidden={section !== 'disciplinas'} key="subjects-title">
         <p className="eyebrow">03 / ORGANIZAÇÃO</p>
         <h2 id="subjects-title">Disciplinas</h2>
         <form onSubmit={addSubject} className="form">
@@ -226,7 +245,7 @@ export default function Home() {
           })}</ul>
         </div>}
       </section>
-      <section className="panel" aria-labelledby="tasks-title">
+      <section className="panel" aria-labelledby="tasks-title" hidden={section !== 'tarefas'} key="tasks-title">
         <p className="eyebrow">04 / PLANEJAMENTO</p>
         <h2 id="tasks-title">Tarefas</h2>
         {!data.subjects.length && <p className="muted">Adicione uma disciplina para cadastrar tarefas.</p>}
@@ -265,7 +284,7 @@ export default function Home() {
         </li>)}</ul>
       </section>
     </div>
-    <section className="panel mt-5" aria-labelledby="agenda-title">
+    <section className="panel mt-5" aria-labelledby="agenda-title" hidden={section !== 'agenda'} key="agenda-title">
       <p className="eyebrow">05 / PRAZOS</p>
       <h2 id="agenda-title">Agenda de tarefas</h2>
       <label className="form sm:max-w-xs">Mês<input type="month" value={month} onChange={event => setAgendaMonth(event.target.value)} /></label>
@@ -274,7 +293,7 @@ export default function Home() {
           <time dateTime={task.deadline}>{displayDate(task.deadline)}</time> · <strong>{task.title}</strong> · {task.subject} · {task.done ? 'Concluída' : task.deadline < today ? 'Atrasada' : 'Pendente'}
         </li>)}</ol>}
     </section>
-    <section className="panel weekly-report mt-5" aria-labelledby="weekly-title">
+    <section className="panel weekly-report mt-5" aria-labelledby="weekly-title" hidden={section !== 'relatorio'} key="weekly-title">
       <p className="eyebrow">06 / RELATÓRIO</p>
       <h2 id="weekly-title">EduTrack · Relatório semanal</h2>
       <p>De {displayDate(week.start)} a {displayDate(week.end)}</p>
