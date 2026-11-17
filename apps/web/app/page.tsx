@@ -202,6 +202,9 @@ export default function Home() {
         <a className="orbit-link" {...navigation('pomodoro')}>Pomodoro</a>
         <a className="orbit-link" {...navigation('orbit')}>Sugestão do Orbit</a>
         <a className="orbit-link" {...navigation('relatorio')}>Relatório semanal</a>
+        <a className="orbit-link" href="https://classroom.google.com/" target="_blank" rel="noopener noreferrer" aria-label="Abrir Google Classroom em outra aba">
+          Abrir Google Classroom <span className="ml-auto pl-2" aria-hidden="true">↗</span>
+        </a>
       </nav>
     </aside>
     <main id="inicio" className="mx-auto w-full max-w-6xl px-5 py-8 sm:px-10 sm:py-12">
