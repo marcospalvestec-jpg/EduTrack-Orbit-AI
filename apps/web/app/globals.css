@@ -1,0 +1,29 @@
+@import 'tailwindcss';
+
+:root { color-scheme: light dark; --bg: #fff6fa; --surface: #fff; --ink: #30182c; --muted: #68495f; --line: #e7cadb; --accent: #981b64; }
+@media (prefers-color-scheme: dark) {
+  :root { --bg: #160e20; --surface: #23162d; --ink: #fff0f7; --muted: #d8b9ce; --line: #543853; --accent: #a92373; }
+}
+body { background: var(--bg); color: var(--ink); font-family: Outfit, system-ui, sans-serif; }
+h1 { font-size: clamp(2.25rem, 6vw, 4rem); font-weight: 750; line-height: 1.1; margin: .35rem 0 .85rem; letter-spacing: -.045em; }
+h2 { font-size: 1.65rem; font-weight: 720; margin: .2rem 0 .8rem; }
+.eyebrow, .time { font-family: 'Space Mono', ui-monospace, monospace; }
+.eyebrow { font-size: .78rem; letter-spacing: .11em; font-weight: 700; color: var(--muted); }
+.muted { color: var(--muted); }
+.badge { display: inline-block; padding: .4rem .8rem; border: 1px solid var(--line); border-radius: 2rem; margin-top: 1rem; font-size: .85rem; }
+.panel { min-width: 0; overflow-wrap: anywhere; background: var(--surface); padding: clamp(1rem, 4vw, 1.5rem); border: 1px solid var(--line); border-radius: 1.2rem; }
+.time { font-size: clamp(3rem, 9vw, 5.15rem); font-weight: 700; letter-spacing: -.08em; line-height: 1.15; margin: .7rem 0 1rem; }
+.suggestion { font-size: 1.3rem; font-weight: 700; }
+.suggestion + p { margin-bottom: 1rem; }
+.form { display: grid; gap: .75rem; min-width: 0; }
+.form label { display: grid; gap: .25rem; min-width: 0; }
+input:not([type=checkbox]), select, button { min-height: 44px; padding: .45rem .7rem; border: 1px solid var(--line); border-radius: .55rem; background: var(--surface); color: var(--ink); }
+input:not([type=checkbox]), select { width: 100%; min-width: 0; }
+button { cursor: pointer; font-weight: 650; }
+button:disabled { cursor: default; opacity: .6; }
+.accent { background: var(--accent); color: #fff; border-color: transparent; }
+:focus-visible { outline: 2px solid currentColor; outline-offset: 3px; }
+.task-list, .subject-list { margin-top: .8rem; }
+.task-list li, .subject-list li { border-top: 1px solid var(--line); padding: .6rem 0; }
+.task-list label { display: flex; align-items: center; min-height: 44px; gap: .8rem; }
+.task-list small { display: block; color: var(--muted); }
