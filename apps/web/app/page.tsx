@@ -22,6 +22,7 @@ export default function Home() {
   const [includeOverdue, setIncludeOverdue] = useState(false);
   const [agendaMonth, setAgendaMonth] = useState('');
   const [notice, setNotice] = useState('');
+  const [menuOpen, setMenuOpen] = useState(true);
   const { phase, cycles, seconds, end } = timer;
 
   useEffect(() => {
@@ -133,16 +134,32 @@ export default function Home() {
     .sort((a, b) => a.deadline.localeCompare(b.deadline));
   const time = `${String(Math.floor(seconds / 60)).padStart(2, '0')}:${String(seconds % 60).padStart(2, '0')}`;
 
-  return <main className="mx-auto max-w-6xl px-5 py-8 sm:px-10 sm:py-12">
+  return <div className="orbit-shell">
+    <aside className="orbit-sidebar" aria-label="Barra lateral">
+      <a className="orbit-mark" href="#inicio">EduTrack <span>Orbit AI</span></a>
+      <nav aria-label="Seções do EduTrack">
+        <a className="orbit-link" href="#inicio">Visão geral</a>
+        <button type="button" className="orbit-menu-toggle" aria-expanded={menuOpen} aria-controls="study-submenu" onClick={() => setMenuOpen(open => !open)}>
+          Organização <span aria-hidden="true" className="orbit-chevron">⌄</span>
+        </button>
+        <div id="study-submenu" className="orbit-submenu" data-open={menuOpen} inert={!menuOpen}>
+          <ul>
+            <li><a className="orbit-link" href="#subjects-title">Disciplinas</a></li>
+            <li><a className="orbit-link" href="#tasks-title">Tarefas</a></li>
+            <li><a className="orbit-link" href="#agenda-title">Agenda</a></li>
+          </ul>
+        </div>
+        <a className="orbit-link" href="#timer-title">Pomodoro</a>
+        <a className="orbit-link" href="#insight-title">Sugestão do Orbit</a>
+        <a className="orbit-link" href="#weekly-title">Relatório semanal</a>
+      </nav>
+    </aside>
+    <main id="inicio" className="mx-auto w-full max-w-6xl px-5 py-8 sm:px-10 sm:py-12">
     <header className="mb-10">
       <p className="eyebrow">EDUTRACK / ORBIT AI</p>
       <h1>Seu espaço de estudo</h1>
       <p className="muted">Organize suas atividades e reserve tempo para o que importa.</p>
       <p className="badge">Demonstração local · os dados ficam neste navegador</p>
-      <nav className="flex flex-wrap gap-4 mt-5" aria-label="Seções do EduTrack">
-        <a href="#subjects-title">Disciplinas</a><a href="#tasks-title">Tarefas</a>
-        <a href="#agenda-title">Agenda</a><a href="#timer-title">Pomodoro</a><a href="#weekly-title">Relatório</a>
-      </nav>
     </header>
     <section className="panel mb-5" aria-label="Resumo acadêmico">
       <dl className="grid grid-cols-2 gap-4 sm:grid-cols-4">
@@ -269,5 +286,6 @@ export default function Home() {
         </li>)}</ul>}
       <button className="accent mt-4" type="button" disabled={!loaded} onClick={() => window.print()}>Imprimir ou salvar como PDF</button>
     </section>
-  </main>;
+    </main>
+  </div>;
 }
