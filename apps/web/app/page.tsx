@@ -2,6 +2,7 @@
 
 import { useEffect, useState, type FormEvent } from 'react';
 import { weeklyReport } from '../lib/weekly';
+import { revisionSessions, type Outcome, type RevisionPlan } from '../lib/revision';
 import { defaultFilters, duration, filterTasks, nextPhase, nextTask, remaining, searchSubjects, subjectProgress, type Phase, type Task, type TaskFilters } from '../lib/study';
 
 const labels = { focus: 'Foco', short: 'Pausa curta', long: 'Pausa longa' };
@@ -21,8 +22,8 @@ function sectionFromHash(): Section {
   if (Object.hasOwn(sections, hash)) return sections[hash as keyof typeof sections];
   return Object.values(sections).find(section => section === hash) ?? 'visao-geral';
 }
-type Data = { subjects: string[]; tasks: Task[] };
-const empty: Data = { subjects: [], tasks: [] };
+type Data = { subjects: string[]; tasks: Task[]; revisions: RevisionPlan[] };
+const empty: Data = { subjects: [], tasks: [], revisions: [] };
 type Timer = { phase: Phase; cycles: number; seconds: number; end: number | null };
 const initialTimer: Timer = { phase: 'focus', cycles: 0, seconds: duration.focus, end: null };
 
@@ -81,7 +82,7 @@ export default function Home() {
       if (raw) {
         const saved = JSON.parse(raw);
         if (!Array.isArray(saved.subjects) || !Array.isArray(saved.tasks)) throw new Error();
-        setData(saved);
+        setData({ ...saved, revisions: Array.isArray(saved.revisions) ? saved.revisions : [] });
       }
       setLoaded(true);
     } catch { setStorageError(true); }
@@ -134,6 +135,7 @@ export default function Home() {
       return;
     }
     save({
+      ...data,
       subjects: data.subjects.map(subject => subject === previous ? name : subject),
       tasks: data.tasks.map(task => task.subject === previous ? { ...task, subject: name } : task),
     });
@@ -173,6 +175,32 @@ export default function Home() {
 
   const suggested = nextTask(data.tasks);
   const today = new Intl.DateTimeFormat('sv-SE', { timeZone: 'America/Sao_Paulo', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
+  const [twoSessions, setTwoSessions] = useState(false);
+  const [revisionError, setRevisionError] = useState('');
+
+  function addRevision(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setRevisionError('');
+    const fields = new FormData(event.currentTarget);
+    const topic = String(fields.get('topic') ?? '').trim();
+    const exam = String(fields.get('exam') ?? '');
+    if (!topic) { setRevisionError('Informe o conteúdo da prova.'); return; }
+    try {
+      const times = [String(fields.get('first') ?? '')];
+      if (twoSessions) times.push(String(fields.get('second') ?? ''));
+      const sessions = revisionSessions(today, exam, times);
+      save({ ...data, revisions: [...data.revisions, { id: crypto.randomUUID(), topic, exam, sessions, results: {} }] });
+      event.currentTarget.reset();
+      setTwoSessions(false);
+    } catch (error) {
+      setRevisionError(error instanceof Error ? error.message : 'Não foi possível criar o plano.');
+    }
+  }
+
+  function markRevision(id: string, session: string, outcome: Outcome) {
+    save({ ...data, revisions: data.revisions.map(plan => plan.id === id
+      ? { ...plan, results: { ...plan.results, [session]: outcome } } : plan) });
+  }
   const visibleTasks = filterTasks(data.tasks, filters, today);
   const week = weeklyReport(data.tasks, today);
   const displayDate = (date: string) => date.split('-').reverse().join('/');
@@ -339,6 +367,44 @@ export default function Home() {
     <section className="panel mt-5" aria-labelledby="agenda-title" hidden={section !== 'agenda'} key="agenda-title">
       <p className="eyebrow">05 / PRAZOS</p>
       <h2 id="agenda-title">Agenda de tarefas</h2>
+      <section className="panel mb-5" aria-labelledby="revision-title">
+        <p className="eyebrow">PLANO DE ESTUDO</p>
+        <h3 id="revision-title" className="suggestion">Revisão Orbit</h3>
+        <p className="muted mb-4">Revise uma ou duas vezes por dia até a véspera. Tente explicar sem consultar; depois confira o que esqueceu.</p>
+        <form className="form" onSubmit={addRevision}>
+          <label>Matéria e conteúdo da prova<input name="topic" maxLength={120} required placeholder="Ex.: Banco de Dados — normalização" /></label>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <label>Data da prova<input name="exam" type="date" required /></label>
+            <label>Sessões por dia<select value={twoSessions ? '2' : '1'} onChange={event => setTwoSessions(event.target.value === '2')}><option value="1">Uma</option><option value="2">Duas</option></select></label>
+            <label>Primeiro horário<input name="first" type="time" defaultValue="08:00" required /></label>
+            {twoSessions && <label>Segundo horário<input name="second" type="time" defaultValue="20:00" required /></label>}
+          </div>
+          <button className="accent" disabled={!loaded}>Criar plano de revisão</button>
+          {revisionError && <p role="alert">{revisionError}</p>}
+        </form>
+        <ul className="mt-4 grid gap-3">{data.revisions.map(plan => {
+          const previous = plan.sessions.findLast(session => plan.results[session]);
+          const upcoming = plan.sessions.find(session => session.slice(0, 10) >= today && !plan.results[session]);
+          return <li className="panel" key={plan.id}>
+            <h4 className="font-bold">{plan.topic}</h4>
+            <p className="muted">Prova: {displayDate(plan.exam)} · {Object.keys(plan.results).length} de {plan.sessions.length} sessões registradas</p>
+            {previous && plan.results[previous] === 'review' && <p>Antes de reler, retome os pontos difíceis da última revisão.</p>}
+            <p className="my-2">{upcoming ? `Próxima sessão pendente: ${displayDate(upcoming.slice(0, 10))} às ${upcoming.slice(11)}` : 'Não há sessões pendentes a partir de hoje.'}</p>
+            <details>
+              <summary className="cursor-pointer">Ver sessões e registrar revisão</summary>
+              <ol className="mt-2 grid max-h-80 gap-3 overflow-auto pr-2">{plan.sessions.map(session => (
+                <li key={session} className="grid gap-1">
+                  <label>{displayDate(session.slice(0, 10))} às {session.slice(11)}
+                    <select value={plan.results[session] ?? ''} disabled={session.slice(0, 10) > today} onChange={event => markRevision(plan.id, session, event.target.value as Outcome)}>
+                      <option value="" disabled>Sem registro</option><option value="remembered">Consegui explicar</option><option value="review">Preciso rever</option>
+                    </select>
+                  </label>
+                </li>
+              ))}</ol>
+            </details>
+          </li>;
+        })}</ul>
+      </section>
       <label className="form sm:max-w-xs">Mês<input type="month" value={month} onChange={event => setAgendaMonth(event.target.value)} /></label>
       {!agenda.length ? <p className="muted mt-3">Nenhuma tarefa com prazo neste mês.</p> :
         <ol className="task-list">{agenda.map(task => <li key={task.id}>
