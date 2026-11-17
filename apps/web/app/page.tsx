@@ -39,7 +39,12 @@ export default function Home() {
   const [notice, setNotice] = useState('');
   const [menuOpen, setMenuOpen] = useState(true);
   const [theme, setTheme] = useState<Theme>('system');
+  const [systemDark, setSystemDark] = useState(false);
   useEffect(() => {
+    const preference = window.matchMedia('(prefers-color-scheme: dark)');
+    const updateSystemTheme = () => setSystemDark(preference.matches);
+    updateSystemTheme();
+    preference.addEventListener('change', updateSystemTheme);
     try {
       const saved = localStorage.getItem(themeKey);
       if (saved === 'light' || saved === 'dark') {
@@ -47,7 +52,9 @@ export default function Home() {
         applyTheme(saved);
       }
     } catch { /* The system theme still works without local storage. */ }
+    return () => preference.removeEventListener('change', updateSystemTheme);
   }, []);
+  const isDark = theme === 'dark' || (theme === 'system' && systemDark);
 
   function changeTheme(value: Theme) {
     setTheme(value);
@@ -196,16 +203,19 @@ export default function Home() {
         <a className="orbit-link" {...navigation('orbit')}>Sugestão do Orbit</a>
         <a className="orbit-link" {...navigation('relatorio')}>Relatório semanal</a>
       </nav>
-      <label className="form mt-5">
-        <span className="eyebrow">Tema</span>
-        <select value={theme} onChange={event => changeTheme(event.target.value as Theme)}>
-          <option value="system">Sistema</option>
-          <option value="light">Claro</option>
-          <option value="dark">Escuro</option>
-        </select>
-      </label>
     </aside>
     <main id="inicio" className="mx-auto w-full max-w-6xl px-5 py-8 sm:px-10 sm:py-12">
+    <div className="mb-3 flex justify-end">
+      <button type="button" className="grid size-11 place-items-center rounded-full p-0"
+        aria-label={isDark ? 'Ativar tema claro' : 'Ativar tema escuro'}
+        title={isDark ? 'Ativar tema claro' : 'Ativar tema escuro'}
+        onClick={() => changeTheme(isDark ? 'light' : 'dark')}>
+        <svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+          {isDark ? <><circle cx="12" cy="12" r="4" /><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19m0-14-1.5 1.5m-11 11L5 19" /></> :
+            <path d="M20.9 13.4A9 9 0 0 1 10.6 3.1a9 9 0 1 0 10.3 10.3Z" />}
+        </svg>
+      </button>
+    </div>
     <header className="mb-10" hidden={section !== 'visao-geral'}>
       <p className="eyebrow">EDUTRACK / ORBIT AI</p>
       <h1>Seu espaço de estudo</h1>
