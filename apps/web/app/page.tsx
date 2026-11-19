@@ -1,12 +1,11 @@
 'use client';
 
-import { useEffect, useState, type FormEvent } from 'react';
+import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { completionHistory, weeklyReport } from '../lib/weekly';
 import { revisionSessions, type Outcome, type RevisionPlan } from '../lib/revision';
 import { defaultFilters, duration, filterTasks, nextPhase, nextTask, remaining, searchSubjects, subjectProgress, type Phase, type Task, type TaskFilters } from '../lib/study';
 
 const labels = { focus: 'Foco', short: 'Pausa curta', long: 'Pausa longa' };
-const key = 'edutrack-web-demo-v1';
 const themeKey = 'edutrack-web-theme';
 type Theme = 'system' | 'light' | 'dark';
 
@@ -28,6 +27,13 @@ type Timer = { phase: Phase; cycles: number; seconds: number; end: number | null
 const initialTimer: Timer = { phase: 'focus', cycles: 0, seconds: duration.focus, end: null };
 
 export default function Home() {
+  const [user, setUser] = useState<{ name: string; email: string } | null>(null);
+  const [authReady, setAuthReady] = useState(false);
+  const [registering, setRegistering] = useState(false);
+  const [authBusy, setAuthBusy] = useState(false);
+  const [authError, setAuthError] = useState('');
+  const [saving, setSaving] = useState(0);
+  const queue = useRef(Promise.resolve());
   const [data, setData] = useState(empty);
   const [loaded, setLoaded] = useState(false);
   const [storageError, setStorageError] = useState(false);
@@ -77,21 +83,52 @@ export default function Home() {
   const { phase, cycles, seconds, end } = timer;
 
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem(key);
-      if (raw) {
-        const saved = JSON.parse(raw);
-        if (!Array.isArray(saved.subjects) || !Array.isArray(saved.tasks)) throw new Error();
-        setData({ ...saved, revisions: Array.isArray(saved.revisions) ? saved.revisions : [] });
-      }
-      setLoaded(true);
-    } catch { setStorageError(true); }
+    fetch('/api/account', { cache: 'no-store' }).then(async response => {
+      if (response.status === 401) return;
+      if (!response.ok) throw new Error();
+      const result = await response.json();
+      setUser(result.user); setData(result.data); setLoaded(true);
+    }).catch(() => setAuthError('Não foi possível consultar sua sessão. Atualize a página.'))
+      .finally(() => setAuthReady(true));
   }, []);
 
   function save(next: Data) {
     setData(next);
-    try { localStorage.setItem(key, JSON.stringify(next)); }
-    catch { setStorageError(true); }
+    setSaving(count => count + 1);
+    queue.current = queue.current.then(async () => {
+      try {
+        const response = await fetch('/api/account', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'save', data: next }) });
+        if (!response.ok) throw new Error();
+        setStorageError(false);
+      } catch { setStorageError(true); }
+      finally { setSaving(count => count - 1); }
+    });
+  }
+
+  async function authenticate(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault(); setAuthError(''); setAuthBusy(true);
+    const fields = new FormData(event.currentTarget);
+    if (registering && fields.get('password') !== fields.get('confirmation')) {
+      setAuthError('As senhas precisam ser iguais.'); setAuthBusy(false); return;
+    }
+    try {
+      const response = await fetch('/api/account', { method:'POST', headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({ action: registering ? 'register' : 'login', name:fields.get('name'), email:fields.get('email'), password:fields.get('password') }) });
+      const result = await response.json();
+      if (!response.ok) { setAuthError(result.error); return; }
+      setData(result.data); setUser(result.user); setLoaded(true); setStorageError(false);
+      setSection('visao-geral'); window.location.hash = 'visao-geral';
+    } catch { setAuthError('Não foi possível conectar. Tente novamente.'); }
+    finally { setAuthBusy(false); }
+  }
+
+  async function logout() {
+    if (saving) return;
+    try {
+      const response = await fetch('/api/account', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({action:'logout'}) });
+      if (!response.ok) throw new Error();
+      setUser(null); setData(empty); setLoaded(false); setTimer(initialTimer); setLinked(''); setNotice(''); setAuthError('');
+    } catch { setNotice('Não foi possível sair. Tente novamente.'); }
   }
 
   useEffect(() => {
@@ -214,8 +251,25 @@ export default function Home() {
     .sort((a, b) => a.deadline.localeCompare(b.deadline));
   const time = `${String(Math.floor(seconds / 60)).padStart(2, '0')}:${String(seconds % 60).padStart(2, '0')}`;
 
+  if (!authReady) return <main className="mx-auto max-w-md p-8" role="status">Carregando sua conta…</main>;
+  if (!user) return <main className="mx-auto max-w-md px-5 py-12">
+    <p className="eyebrow">EDUTRACK / ORBIT AI</p>
+    <h1 className="mt-4">{registering ? 'Crie sua conta' : 'Bem-vindo de volta'}</h1>
+    <p className="muted mb-6">Organize seus estudos com uma conta individual.</p>
+    <form className="panel form" onSubmit={authenticate} key={registering ? 'register' : 'login'}>
+      {registering && <label>Nome<input name="name" autoComplete="name" minLength={2} maxLength={80} required /></label>}
+      <label>E-mail<input type="email" name="email" autoComplete="username" maxLength={254} required /></label>
+      <label>Senha<input type="password" name="password" autoComplete={registering ? 'new-password' : 'current-password'} minLength={registering ? 10 : undefined} maxLength={128} required /></label>
+      {registering && <><p className="muted">Use pelo menos 10 caracteres.</p><label>Confirmar senha<input type="password" name="confirmation" autoComplete="new-password" minLength={10} maxLength={128} required /></label></>}
+      {authError && <p role="alert">{authError}</p>}
+      <button className="accent" disabled={authBusy}>{authBusy ? 'Aguarde…' : registering ? 'Cadastrar e entrar' : 'Entrar'}</button>
+      <button type="button" disabled={authBusy} onClick={() => { setRegistering(!registering); setAuthError(''); }}>{registering ? 'Já tenho uma conta' : 'Criar novo usuário'}</button>
+    </form>
+  </main>;
   return <div className="orbit-shell">
     <aside className="orbit-sidebar" aria-label="Barra lateral">
+      <p className="muted px-3 mb-2">{user.name}</p>
+      <button className="mb-4 w-full" disabled={saving > 0} onClick={logout}>Sair da conta</button>
       <a className="orbit-mark" href="#visao-geral">EduTrack <span>Orbit AI</span>
         <svg className="ml-1.5 inline-block align-middle text-[var(--accent)]" aria-hidden="true" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
           <rect x="4" y="7" width="16" height="13" rx="4" />
@@ -260,7 +314,7 @@ export default function Home() {
       <p className="eyebrow">EDUTRACK / ORBIT AI</p>
       <h1>Seu espaço de estudo</h1>
       <p className="muted">Organize suas atividades e reserve tempo para o que importa.</p>
-      <p className="badge">Demonstração local · os dados ficam neste navegador</p>
+      <p className="badge">Conta: {user.email} · {saving ? 'Salvando…' : 'Dados salvos neste servidor local'}</p>
     </header>
     <section className="panel mb-5" aria-label="Resumo acadêmico" hidden={section !== 'visao-geral'}>
       <dl className="grid grid-cols-2 gap-4 sm:grid-cols-4">
@@ -271,7 +325,7 @@ export default function Home() {
       </dl>
     </section>
     <p className="muted mb-3" role="status">{notice}</p>
-    {storageError && <p role="alert">O armazenamento local não está disponível. Não foi possível carregar ou salvar seus dados no navegador.</p>}
+    {storageError && <p role="alert">Não foi possível salvar as últimas alterações no servidor. <button onClick={() => save(data)}>Tentar salvar novamente</button></p>}
     <div>
       <section className="panel" aria-labelledby="timer-title" hidden={section !== 'pomodoro'} key="timer-title">
         <p className="eyebrow">01 / SESSÃO DE ESTUDO</p>
